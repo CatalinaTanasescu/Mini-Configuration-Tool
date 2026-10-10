@@ -1,6 +1,6 @@
 # NXP Mini Configuration Tool
 
-Desktop configuration utility implemented in Java 21 with a Swing GUI and a Picocli CLI. The application loads processor capabilities from JSON, keeps mutable user configuration separate from static hardware definitions, validates embedded constraints through composable rules, and exports a versioned JSON configuration.
+Desktop configuration utility implemented in Java 21 with a Swing GUI and a Picocli CLI. The application loads processor capabilities from JSON, keeps mutable user configuration separate from static hardware definitions, validates embedded constraints through composable rules, imports and compares saved configurations, and exports versioned JSON or XML.
 
 ## Requirements
 
@@ -53,6 +53,12 @@ export configuration.json
 exit
 ```
 
+Advanced CLI commands include `import`, `undo`, `redo`, `auto-assign`, `dependencies`, `diff`, `templates`, `save-template`, and `apply-template`. XML uses the existing export command:
+
+```powershell
+java -jar target/mini-configuration-tool-0.0.1-SNAPSHOT-all.jar cli --script='enable LPUART0;clock LPUART0 on;auto-assign LPUART0;export configuration.xml --format xml'
+```
+
 For repeatable smoke tests, commands can run in one persistent scripted session:
 
 ```powershell
@@ -74,12 +80,13 @@ The project compiler release is fixed at Java 21 in `pom.xml`. Eclipse should sh
 
 ## Desktop workflow
 
-The toolbar controls processor selection and power mode. The left navigation opens:
+The toolbar controls processor selection and power mode. The File, Edit, Tools, and View menus provide JSON import, JSON/XML export, undo/redo, auto-assignment, templates, configuration diff, dependency visualization, and light/dark theme switching. The left navigation opens:
 
 - **Overview** for configuration metrics and workflow guidance
 - **Pin Configuration** for searchable, constrained function assignment
 - **Peripherals & Clocks** for enable and clock state plus resource visibility
 - **Validation** for actionable errors and warnings; double-clicking navigates to the resource
+- **Dependencies** for a processor → peripheral → clock → signal/pin tree
 - **Configuration Summary** for a complete pre-export review
 
 Changing processors does not silently discard edits. If the current state is dirty, the GUI asks for confirmation and the CLI requires `select <id> --discard`.
@@ -99,6 +106,23 @@ Additional independent rules:
 - an assignment cannot target a disabled peripheral.
 
 An enabled peripheral without assigned resources is reported as a warning. Errors block export; warnings do not.
+
+User-defined validation rules can be loaded at startup from JSON files in a directory selected with `-Dconfigtool.validationDir=<path>` or `CONFIGTOOL_VALIDATION_DIR`. Rules combine processor, power-mode, enabled-peripheral, and assigned-function conditions without Java changes:
+
+```json
+{
+  "schemaVersion": 1,
+  "code": "CUSTOM_UART_LOW_POWER",
+  "severity": "WARNING",
+  "message": "UART review is required in low power.",
+  "suggestion": "Confirm the board power budget.",
+  "when": {
+    "processorIds": ["ProcessorA"],
+    "powerModes": ["LOW_POWER"],
+    "allEnabledPeripherals": ["LPUART0"]
+  }
+}
+```
 
 Explicit processor metadata is the primary source for signal ownership and exclusivity. For legacy definitions without a `peripherals` section, the compatibility adapter maps known naming conventions, treats the inferred signals as exclusive, maps `LPUART` to the `UART` power category, and preserves the source identifier `I2C_SCL` while associating it with `I2C0`. No LOW_POWER restrictions are invented for categories not covered by the requirements.
 
@@ -120,7 +144,7 @@ Create a JSON file that follows schema version 1:
     {
       "name": "PTX1",
       "physicalNumber": 2,
-      "availableFunctions": ["GPIO", "WAKE_REQUEST", "STATUS_BUS"]
+      "availableFunctions": ["GPIO", "WAKE_REQUEST", "STATUS_BUS", "BOARD_WAKE"]
     }
   ],
   "peripherals": [
@@ -130,11 +154,12 @@ Create a JSON file that follows schema version 1:
       "signals": ["WAKE_REQUEST", "STATUS_BUS"],
       "exclusiveSignals": ["WAKE_REQUEST"]
     }
-  ]
+  ],
+  "independentSignals": ["BOARD_WAKE"]
 }
 ```
 
-The optional `peripherals` metadata makes signal ownership independent of identifier naming. `exclusiveSignals` is an explicit subset of `signals`; in the example, `WAKE_REQUEST` may be assigned to only one pin while `STATUS_BUS` is repeatable. Metadata may be introduced gradually because uncovered legacy signals still use `SignalResolver`.
+The optional `peripherals` metadata makes signal ownership independent of identifier naming. `exclusiveSignals` is an explicit subset of `signals`; in the example, `WAKE_REQUEST` may be assigned to only one pin while `STATUS_BUS` is repeatable. Metadata may be introduced gradually because uncovered legacy signals still use `SignalResolver`. Every remaining non-GPIO function must be listed in `independentSignals`; otherwise loading fails with an actionable unmanaged-function diagnostic. This prevents silent signals without a peripheral/clock policy.
 
 Place one or more definitions in an external directory and provide it at startup:
 
@@ -144,9 +169,30 @@ java -Dconfigtool.processorDir=C:\hardware\processors -jar target/mini-configura
 
 Alternatively set `CONFIGTOOL_PROCESSOR_DIR`. Files are validated during startup; duplicate processor IDs, pin names, physical numbers, malformed function lists, and unsupported schema versions fail with a diagnostic instead of producing unpredictable state.
 
+## Advanced workflows
+
+- **Import JSON:** reopens an exported configuration after verifying its processor, peripheral states, pins, and functions.
+- **Undo/redo:** keeps up to 100 immutable session snapshots, including processor and template transitions.
+- **Auto pin assignment:** uses deterministic backtracking to assign every unassigned signal of a selected peripheral without moving existing assignments.
+- **Configuration templates:** saves reusable JSON configurations. The default directory is `%USERPROFILE%\.nxp-mini-configuration-tool\templates`; override it with `configtool.templateDir` or `CONFIGTOOL_TEMPLATE_DIR`.
+- **Configuration diff:** compares processor, power mode, peripheral/clock states, and pin assignments against another JSON configuration.
+- **Dependency visualization:** displays peripheral enable state, clock state, signal exclusivity, and assigned pins as an expandable tree.
+- **Dark mode:** recreates the Swing window with FlatLaf Dark while retaining the same `ConfigurationService` session.
+
+## Independent pin-map verification
+
+The regression digests were established by parsing the original DOCX directly and comparing every pin name, physical sequence, and ordered function list with the bundled JSON files. The source document is read in place and is not copied into the repository. Re-run the procedure with Python 3:
+
+```powershell
+python tools/verify_pin_maps.py --docx "C:\path\to\Mini Configuration Tool 2.docx"
+```
+
+The expected result is 32 + 48 + 64 definitions, zero differences, and the same SHA-256 values asserted by `JsonProcessorRepositoryTest`.
+
 ## Extension points
 
 - Add validation by implementing `ValidationRule` and registering it in `DefaultValidationRules` or in another composition root. `ValidationEngine` does not change.
+- Add user-managed validation without recompilation by placing declarative rule JSON files in the configured validation directory.
 - Add an export format by implementing `ConfigurationExporter` and injecting it into `ConfigurationService`. Configuration and validation logic do not change.
 - Add another interface by calling the same `ConfigurationService`; Swing and Picocli are existing examples.
 - Define new peripheral or signal types in processor JSON with explicit `peripherals` metadata. `SignalResolver` remains a compatibility adapter for legacy definitions.
