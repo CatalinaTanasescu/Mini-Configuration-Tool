@@ -96,7 +96,7 @@ public final class OverviewPanel extends JPanel {
         addStep(panel, "1", "Choose a processor and power mode from the toolbar.");
         addStep(panel, "2", "Enable peripherals and their clocks in Peripherals & Clocks.");
         addStep(panel, "3", "Assign supported functions in the Pin Configuration table.");
-        addStep(panel, "4", "Resolve validation issues, inspect the summary, then export JSON.");
+        addStep(panel, "4", "Resolve validation issues, inspect the summary, then export JSON or XML.");
         return panel;
     }
 

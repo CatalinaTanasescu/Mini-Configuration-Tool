@@ -22,6 +22,7 @@ import com.example.configtool.application.port.ConfigurationTemplateRepository;
 import com.example.configtool.application.port.ProcessorRepository;
 import com.example.configtool.domain.model.Configuration;
 import com.example.configtool.domain.model.PeripheralConfiguration;
+import com.example.configtool.domain.model.PeripheralDefinition;
 import com.example.configtool.domain.model.PinAssignment;
 import com.example.configtool.domain.model.PowerMode;
 import com.example.configtool.domain.model.ProcessorDefinition;
@@ -335,7 +336,7 @@ public final class ConfigurationService {
         return Set.copyOf(importers.keySet());
     }
 
-    private com.example.configtool.domain.model.PeripheralDefinition requirePeripheral(String peripheralId) {
+    private PeripheralDefinition requirePeripheral(String peripheralId) {
         return currentProcessor.findPeripheral(peripheralId)
                 .orElseThrow(() -> new ConfigurationException("Unknown peripheral: " + peripheralId));
     }

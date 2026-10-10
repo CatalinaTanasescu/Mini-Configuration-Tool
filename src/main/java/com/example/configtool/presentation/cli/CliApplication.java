@@ -39,6 +39,15 @@ import picocli.CommandLine.ParentCommand;
                 CliApplication.ValidateCommand.class,
                 CliApplication.SummaryCommand.class,
                 CliApplication.ExportCommand.class,
+                CliApplication.ImportCommand.class,
+                CliApplication.UndoCommand.class,
+                CliApplication.RedoCommand.class,
+                CliApplication.AutoAssignCommand.class,
+                CliApplication.DependenciesCommand.class,
+                CliApplication.DiffCommand.class,
+                CliApplication.TemplatesCommand.class,
+                CliApplication.SaveTemplateCommand.class,
+                CliApplication.ApplyTemplateCommand.class,
                 CliApplication.ExitCommand.class,
                 CommandLine.HelpCommand.class
         })
@@ -315,6 +324,156 @@ public final class CliApplication implements Callable<Integer> {
         public Integer call() {
             parent.service.export(format, target);
             parent.output.println("Exported " + format + " configuration to " + target.toAbsolutePath() + ".");
+            return 0;
+        }
+    }
+
+    @Command(name = "import", description = "Import a saved configuration into the current session.")
+    static final class ImportCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+        @Parameters(index = "0", paramLabel = "PATH") Path source;
+        @Option(names = "--format", defaultValue = "json",
+                description = "Import format (default: ${DEFAULT-VALUE}).")
+        String format;
+        @Option(names = "--discard", description = "Discard unsaved changes.") boolean discard;
+
+        @Override
+        public Integer call() {
+            parent.service.importConfiguration(format, source, discard);
+            parent.output.println("Imported " + source.toAbsolutePath() + ".");
+            return 0;
+        }
+    }
+
+    @Command(name = "undo", description = "Restore the previous configuration snapshot.")
+    static final class UndoCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+
+        @Override
+        public Integer call() {
+            parent.service.undo();
+            parent.output.println("Undo complete.");
+            return 0;
+        }
+    }
+
+    @Command(name = "redo", description = "Reapply the most recently undone snapshot.")
+    static final class RedoCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+
+        @Override
+        public Integer call() {
+            parent.service.redo();
+            parent.output.println("Redo complete.");
+            return 0;
+        }
+    }
+
+    @Command(name = "auto-assign", description = "Assign all unassigned signals of one peripheral.")
+    static final class AutoAssignCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+        @Parameters(index = "0", paramLabel = "PERIPHERAL") String peripheralId;
+
+        @Override
+        public Integer call() {
+            var assignments = parent.service.autoAssignPeripheral(peripheralId);
+            if (assignments.isEmpty()) {
+                parent.output.println("No assignment changes were required for " + peripheralId + ".");
+            } else {
+                assignments.forEach(assignment -> parent.output.printf(
+                        "Assigned %-18s to %s.%n", assignment.function(), assignment.pinName()));
+            }
+            return 0;
+        }
+    }
+
+    @Command(name = "dependencies", description = "Visualize peripheral, clock and pin dependencies.")
+    static final class DependenciesCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+
+        @Override
+        public Integer call() {
+            var processor = parent.service.currentProcessor();
+            var configuration = parent.service.currentConfiguration();
+            processor.peripherals().forEach(peripheral -> {
+                var state = configuration.peripheralConfigurations().get(peripheral.id());
+                String pins = configuration.pinAssignments().stream()
+                        .filter(assignment -> processor.resolveSignal(assignment.function())
+                                .map(signal -> signal.peripheralId().equals(peripheral.id()))
+                                .orElse(false))
+                        .map(assignment -> assignment.function() + "@" + assignment.pinName())
+                        .sorted()
+                        .collect(java.util.stream.Collectors.joining(", "));
+                parent.output.printf("%s -> clock=%s -> %s%n",
+                        peripheral.id(),
+                        state.clockEnabled() ? "ON" : "OFF",
+                        pins.isBlank() ? "no assigned pins" : pins);
+            });
+            return 0;
+        }
+    }
+
+    @Command(name = "diff", description = "Compare the current state with a saved configuration.")
+    static final class DiffCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+        @Parameters(index = "0", paramLabel = "PATH") Path source;
+        @Option(names = "--format", defaultValue = "json",
+                description = "Compared format (default: ${DEFAULT-VALUE}).")
+        String format;
+
+        @Override
+        public Integer call() {
+            var differences = parent.service.diff(format, source);
+            if (differences.isEmpty()) {
+                parent.output.println("IDENTICAL: no configuration differences.");
+            } else {
+                differences.forEach(difference -> parent.output.printf(
+                        "%-28s current=%s compared=%s%n",
+                        difference.field(), difference.currentValue(), difference.comparedValue()));
+            }
+            return 0;
+        }
+    }
+
+    @Command(name = "templates", description = "List saved configuration templates.")
+    static final class TemplatesCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+
+        @Override
+        public Integer call() {
+            var names = parent.service.templateNames();
+            if (names.isEmpty()) {
+                parent.output.println("No configuration templates are saved.");
+            } else {
+                names.forEach(parent.output::println);
+            }
+            return 0;
+        }
+    }
+
+    @Command(name = "save-template", description = "Save the current state as a reusable template.")
+    static final class SaveTemplateCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+        @Parameters(index = "0", paramLabel = "NAME") String name;
+
+        @Override
+        public Integer call() {
+            parent.service.saveTemplate(name);
+            parent.output.println("Saved template " + name + ".");
+            return 0;
+        }
+    }
+
+    @Command(name = "apply-template", description = "Apply a saved configuration template.")
+    static final class ApplyTemplateCommand implements Callable<Integer> {
+        @ParentCommand CliApplication parent;
+        @Parameters(index = "0", paramLabel = "NAME") String name;
+        @Option(names = "--discard", description = "Discard unsaved changes.") boolean discard;
+
+        @Override
+        public Integer call() {
+            parent.service.applyTemplate(name, discard);
+            parent.output.println("Applied template " + name + ".");
             return 0;
         }
     }

@@ -3,6 +3,7 @@ package com.example.configtool.presentation.gui.panel;
 import java.awt.BorderLayout;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -24,10 +25,28 @@ public final class PeripheralConfigurationPanel extends JPanel {
         super(new BorderLayout(0, 14));
         setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(24, 28, 28, 28));
-        add(PanelSupport.header(
+        JPanel top = new JPanel(new BorderLayout(16, 0));
+        top.setOpaque(false);
+        top.add(PanelSupport.header(
                 "Peripherals and clocks",
                 "Enable peripherals and their associated clocks, then inspect assigned pin resources."),
-                BorderLayout.NORTH);
+                BorderLayout.CENTER);
+        JButton autoAssign = new JButton("Auto-assign selected");
+        autoAssign.addActionListener(event -> {
+            try {
+                String selected = selectedPeripheralId();
+                if (selected == null) {
+                    throw new com.example.configtool.application.service.ConfigurationException(
+                            "Select a peripheral before running auto-assignment");
+                }
+                service.autoAssignPeripheral(selected);
+                changeListener.run();
+            } catch (RuntimeException exception) {
+                errorHandler.accept(exception);
+            }
+        });
+        top.add(autoAssign, BorderLayout.EAST);
+        add(top, BorderLayout.NORTH);
 
         model = new PeripheralTableModel(service, changeListener, errorHandler);
         table = new JTable(model);
@@ -61,5 +80,12 @@ public final class PeripheralConfigurationPanel extends JPanel {
                 break;
             }
         }
+    }
+
+    public String selectedPeripheralId() {
+        int viewRow = table.getSelectedRow();
+        return viewRow < 0
+                ? null
+                : model.peripheralAt(table.convertRowIndexToModel(viewRow)).id();
     }
 }

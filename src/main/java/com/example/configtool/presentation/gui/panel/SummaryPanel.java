@@ -26,7 +26,7 @@ public final class SummaryPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(24, 28, 28, 28));
         add(PanelSupport.header(
                 "Configuration summary",
-                "Review the complete selected state before generating the versioned JSON output."),
+                "Review the complete selected state before generating versioned JSON or XML output."),
                 BorderLayout.NORTH);
 
         summary.setEditable(false);

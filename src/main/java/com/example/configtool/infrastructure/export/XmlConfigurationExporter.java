@@ -93,8 +93,10 @@ public final class XmlConfigurationExporter implements ConfigurationExporter {
                             processor.findPin(assignment.pinName()).orElseThrow().physicalNumber()));
                     xml.writeAttribute("pinName", assignment.pinName());
                     xml.writeAttribute("function", assignment.function());
-                    processor.resolveSignal(assignment.function())
-                            .ifPresent(signal -> writeAttribute(xml, "peripheralId", signal.peripheralId()));
+                    var signal = processor.resolveSignal(assignment.function());
+                    if (signal.isPresent()) {
+                        xml.writeAttribute("peripheralId", signal.orElseThrow().peripheralId());
+                    }
                 }
                 xml.writeEndElement();
                 xml.writeEndElement();
@@ -105,14 +107,6 @@ public final class XmlConfigurationExporter implements ConfigurationExporter {
             }
         } catch (XMLStreamException exception) {
             throw new IOException("Cannot generate XML configuration", exception);
-        }
-    }
-
-    private static void writeAttribute(XMLStreamWriter xml, String name, String value) {
-        try {
-            xml.writeAttribute(name, value);
-        } catch (XMLStreamException exception) {
-            throw new IllegalStateException(exception);
         }
     }
 }
