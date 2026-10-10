@@ -62,7 +62,7 @@ public final class CliApplication implements Callable<Integer> {
                 new PrintWriter(System.out, true));
     }
 
-    CliApplication(ConfigurationService service, BufferedReader input, PrintWriter output) {
+    public CliApplication(ConfigurationService service, BufferedReader input, PrintWriter output) {
         this.service = service;
         this.input = input;
         this.output = output;

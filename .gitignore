@@ -8,7 +8,6 @@
 *.log
 *.tmp
 *.bak
-*.launch
 .DS_Store
 Thumbs.db
 config-export*.json
