@@ -161,6 +161,48 @@ class JsonProcessorRepositoryTest {
     }
 
     @Test
+    void rejectsUnmanagedFunctionWithActionableDiagnostic() throws IOException {
+        Files.writeString(temporaryDirectory.resolve("unmanaged.json"), """
+                {
+                  "schemaVersion": 1,
+                  "id": "Unmanaged",
+                  "pins": [
+                    {"name":"PTX0","physicalNumber":1,
+                     "availableFunctions":["GPIO","BOARD_WAKE"]}
+                  ]
+                }
+                """);
+
+        ProcessorDefinitionException exception = assertThrows(
+                ProcessorDefinitionException.class,
+                () -> new JsonProcessorRepository(temporaryDirectory));
+
+        assertTrue(exception.getMessage().contains(
+                "Unmanaged pin functions require peripheral metadata or independentSignals"));
+    }
+
+    @Test
+    void loadsExplicitIndependentSignalWithoutInventingPeripheralOrClock() throws IOException {
+        Files.writeString(temporaryDirectory.resolve("independent.json"), """
+                {
+                  "schemaVersion": 1,
+                  "id": "Independent",
+                  "pins": [
+                    {"name":"PTX0","physicalNumber":1,
+                     "availableFunctions":["GPIO","BOARD_WAKE"]}
+                  ],
+                  "independentSignals": ["BOARD_WAKE"]
+                }
+                """);
+
+        ProcessorDefinition processor = new JsonProcessorRepository(temporaryDirectory)
+                .findById("Independent").orElseThrow();
+
+        assertTrue(processor.isIndependentSignal("BOARD_WAKE"));
+        assertTrue(processor.peripherals().isEmpty());
+    }
+
+    @Test
     void rejectsMalformedExternalDefinitionWithActionableMessage() throws IOException {
         Files.writeString(temporaryDirectory.resolve("broken.json"), """
                 {

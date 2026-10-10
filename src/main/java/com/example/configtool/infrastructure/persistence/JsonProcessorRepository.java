@@ -150,7 +150,8 @@ public final class JsonProcessorRepository implements ProcessorRepository {
                     file.id(),
                     file.displayName() == null ? file.id() : file.displayName(),
                     pins,
-                    PeripheralCatalog.fromPins(pins, explicitPeripherals));
+                    PeripheralCatalog.fromPins(pins, explicitPeripherals),
+                    file.independentSignals() == null ? Set.of() : file.independentSignals());
         } catch (ProcessorDefinitionException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -175,7 +176,8 @@ public final class JsonProcessorRepository implements ProcessorRepository {
             String id,
             String displayName,
             List<PinFile> pins,
-            List<PeripheralFile> peripherals) {
+            List<PeripheralFile> peripherals,
+            Set<String> independentSignals) {
     }
 
     private record PinFile(String name, int physicalNumber, List<String> availableFunctions) {

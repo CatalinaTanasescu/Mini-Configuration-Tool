@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,5 +52,31 @@ class DomainModelTest {
 
         assertEquals(List.of(new PinAssignment("PTA0", "ADC0_CH0")),
                 configuration.pinAssignments());
+    }
+
+    @Test
+    void processorRejectsUnmanagedFunctionRegardlessOfConstructionPath() {
+        List<PinDefinition> pins = List.of(
+                new PinDefinition("PTX0", 1, List.of("GPIO", "UNMANAGED_SIGNAL")));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new ProcessorDefinition("Test", "Test", pins, List.of()));
+
+        assertEquals(
+                "Unmanaged pin functions require peripheral metadata or independentSignals: [UNMANAGED_SIGNAL]",
+                exception.getMessage());
+    }
+
+    @Test
+    void processorAcceptsExplicitIndependentSignal() {
+        ProcessorDefinition processor = new ProcessorDefinition(
+                "Test",
+                "Test",
+                List.of(new PinDefinition("PTX0", 1, List.of("GPIO", "BOARD_WAKE"))),
+                List.of(),
+                Set.of("BOARD_WAKE"));
+
+        assertEquals(true, processor.isIndependentSignal("BOARD_WAKE"));
+        assertEquals(false, processor.resolveSignal("BOARD_WAKE").isPresent());
     }
 }
