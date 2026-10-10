@@ -1,0 +1,5 @@
+[
+  "processors/processor-a.json",
+  "processors/processor-b.json",
+  "processors/processor-c.json"
+]
