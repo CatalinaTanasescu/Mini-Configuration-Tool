@@ -1,33 +1,15 @@
-
-# Maven build outputs
-target/
-*.class
-
-# Eclipse generated configuration
-.classpath
-.project
-.settings/
-
-# Other IDE files
-.idea/
-*.iml
-.vscode/
-
-# Operating system files
-.DS_Store
-Thumbs.db
-
-# Temporary files
+/target/
+/.settings/
+/.classpath
+/.project
+/.factorypath
+/.idea/
+/.tools/
 *.log
 *.tmp
 *.bak
-
-# Confidential NXP documents
-*Mini Configuration Tool*.docx
-*Complete_Project_Blueprint.md
-nxp_mini_configuration_tool_project_instructions.md
-nxp_chatgpt_project_instructions.txt
-
-# Secrets
-.env
-.env.*
+*.launch
+.DS_Store
+Thumbs.db
+config-export*.json
+external-processors/
