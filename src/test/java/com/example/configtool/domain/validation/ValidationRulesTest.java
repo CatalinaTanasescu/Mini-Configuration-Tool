@@ -5,12 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.example.configtool.domain.model.Configuration;
+import com.example.configtool.domain.model.PeripheralCategory;
+import com.example.configtool.domain.model.PeripheralDefinition;
 import com.example.configtool.domain.model.PinAssignment;
+import com.example.configtool.domain.model.PinDefinition;
 import com.example.configtool.domain.model.PowerMode;
 import com.example.configtool.domain.model.ProcessorDefinition;
 import com.example.configtool.domain.validation.rules.DefaultValidationRules;
@@ -30,7 +34,7 @@ class ValidationRulesTest {
     }
 
     @Test
-    void detectsPinMultiplexingConflict() {
+    void detectsPinMultiplexingConflictInExternallyConstructedSnapshot() {
         configuration = new Configuration(
                 processor.id(), PowerMode.RUN, configuration.peripheralConfigurations(),
                 List.of(
@@ -38,6 +42,40 @@ class ValidationRulesTest {
                         new PinAssignment("PTA2", "SPI0_MOSI")));
 
         assertHasError("PIN_MULTIPLEXING");
+    }
+
+    @Test
+    void appliesExclusivityOnlyToSignalsDeclaredExclusiveByMetadata() {
+        processor = new ProcessorDefinition(
+                "MetadataProcessor",
+                "Metadata Processor",
+                List.of(
+                        new PinDefinition("PTX0", 1, List.of("GPIO", "STATUS_BUS", "WAKE_REQUEST")),
+                        new PinDefinition("PTX1", 2, List.of("GPIO", "STATUS_BUS", "WAKE_REQUEST"))),
+                List.of(new PeripheralDefinition(
+                        "SAFETY0",
+                        PeripheralCategory.OTHER,
+                        List.of("STATUS_BUS", "WAKE_REQUEST"),
+                        Set.of("WAKE_REQUEST"))));
+        configuration = new Configuration(
+                processor.id(),
+                PowerMode.RUN,
+                Configuration.emptyFor(processor).peripheralConfigurations(),
+                List.of(
+                        new PinAssignment("PTX0", "STATUS_BUS"),
+                        new PinAssignment("PTX1", "STATUS_BUS")));
+
+        assertFalse(hasIssue("DUPLICATE_EXCLUSIVE_SIGNAL"));
+
+        configuration = new Configuration(
+                processor.id(),
+                PowerMode.RUN,
+                configuration.peripheralConfigurations(),
+                List.of(
+                        new PinAssignment("PTX0", "WAKE_REQUEST"),
+                        new PinAssignment("PTX1", "WAKE_REQUEST")));
+
+        assertHasError("DUPLICATE_EXCLUSIVE_SIGNAL");
     }
 
     @Test

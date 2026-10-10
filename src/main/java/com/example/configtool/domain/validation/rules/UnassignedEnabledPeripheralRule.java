@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.example.configtool.domain.model.SignalResolver;
 import com.example.configtool.domain.validation.ValidationContext;
 import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
@@ -17,7 +16,7 @@ public final class UnassignedEnabledPeripheralRule implements ValidationRule {
     @Override
     public List<ValidationIssue> validate(ValidationContext context) {
         Set<String> assignedPeripherals = context.configuration().pinAssignments().stream()
-                .flatMap(assignment -> SignalResolver.resolve(assignment.function()).stream())
+                .flatMap(assignment -> context.processor().resolveSignal(assignment.function()).stream())
                 .map(signal -> signal.peripheralId())
                 .collect(Collectors.toSet());
         return context.configuration().peripheralConfigurations().values().stream()

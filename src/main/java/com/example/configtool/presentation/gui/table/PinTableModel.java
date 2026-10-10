@@ -6,7 +6,6 @@ import javax.swing.table.AbstractTableModel;
 
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.domain.model.PinDefinition;
-import com.example.configtool.domain.model.SignalResolver;
 
 public final class PinTableModel extends AbstractTableModel {
 
@@ -63,7 +62,7 @@ public final class PinTableModel extends AbstractTableModel {
             case 1 -> pin.name();
             case 2 -> String.join(", ", pin.availableFunctions());
             case 3 -> assignment;
-            case 4 -> SignalResolver.resolve(assignment)
+            case 4 -> service.currentProcessor().resolveSignal(assignment)
                     .map(value -> value.peripheralId()).orElse("-");
             case 5 -> assignment.isBlank() ? "Unassigned" : "Assigned";
             default -> throw new IndexOutOfBoundsException("Unknown column " + columnIndex);

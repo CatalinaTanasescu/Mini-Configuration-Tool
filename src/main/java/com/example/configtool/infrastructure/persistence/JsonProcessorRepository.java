@@ -10,10 +10,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.example.configtool.application.port.ProcessorRepository;
 import com.example.configtool.domain.model.PeripheralCatalog;
+import com.example.configtool.domain.model.PeripheralCategory;
+import com.example.configtool.domain.model.PeripheralDefinition;
 import com.example.configtool.domain.model.PinDefinition;
 import com.example.configtool.domain.model.ProcessorDefinition;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -132,11 +135,22 @@ public final class JsonProcessorRepository implements ProcessorRepository {
             List<PinDefinition> pins = file.pins().stream()
                     .map(pin -> new PinDefinition(pin.name(), pin.physicalNumber(), pin.availableFunctions()))
                     .toList();
+            List<PeripheralDefinition> explicitPeripherals = file.peripherals() == null
+                    ? List.of()
+                    : file.peripherals().stream()
+                            .map(peripheral -> new PeripheralDefinition(
+                                    peripheral.id(),
+                                    peripheral.category(),
+                                    peripheral.signals(),
+                                    peripheral.exclusiveSignals() == null
+                                            ? Set.of()
+                                            : peripheral.exclusiveSignals()))
+                            .toList();
             return new ProcessorDefinition(
                     file.id(),
                     file.displayName() == null ? file.id() : file.displayName(),
                     pins,
-                    PeripheralCatalog.fromPins(pins));
+                    PeripheralCatalog.fromPins(pins, explicitPeripherals));
         } catch (ProcessorDefinitionException exception) {
             throw exception;
         } catch (Exception exception) {
@@ -160,9 +174,17 @@ public final class JsonProcessorRepository implements ProcessorRepository {
             int schemaVersion,
             String id,
             String displayName,
-            List<PinFile> pins) {
+            List<PinFile> pins,
+            List<PeripheralFile> peripherals) {
     }
 
     private record PinFile(String name, int physicalNumber, List<String> availableFunctions) {
+    }
+
+    private record PeripheralFile(
+            String id,
+            PeripheralCategory category,
+            List<String> signals,
+            Set<String> exclusiveSignals) {
     }
 }

@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.example.configtool.domain.model.PinAssignment;
-import com.example.configtool.domain.model.SignalResolver;
 import com.example.configtool.domain.validation.ValidationContext;
 import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
@@ -18,7 +17,7 @@ public final class DuplicateExclusiveSignalRule implements ValidationRule {
     @Override
     public List<ValidationIssue> validate(ValidationContext context) {
         Map<String, List<PinAssignment>> byFunction = context.configuration().pinAssignments().stream()
-                .filter(assignment -> !"GPIO".equals(assignment.function()))
+                .filter(assignment -> context.processor().isSignalExclusive(assignment.function()))
                 .collect(Collectors.groupingBy(PinAssignment::function));
         return byFunction.entrySet().stream()
                 .filter(entry -> entry.getValue().stream().map(PinAssignment::pinName).distinct().count() > 1)
@@ -29,7 +28,7 @@ public final class DuplicateExclusiveSignalRule implements ValidationRule {
                                 + entry.getValue().stream().map(PinAssignment::pinName).distinct().sorted().toList(),
                         "Keep the signal on a single physical pin.",
                         null,
-                        SignalResolver.resolve(entry.getKey())
+                        context.processor().resolveSignal(entry.getKey())
                                 .map(signal -> signal.peripheralId()).orElse(null)))
                 .toList();
     }

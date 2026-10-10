@@ -2,7 +2,6 @@ package com.example.configtool.domain.validation.rules;
 
 import java.util.List;
 
-import com.example.configtool.domain.model.SignalResolver;
 import com.example.configtool.domain.validation.ValidationContext;
 import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
@@ -15,7 +14,7 @@ public final class DisabledPeripheralAssignmentRule implements ValidationRule {
     @Override
     public List<ValidationIssue> validate(ValidationContext context) {
         return context.configuration().pinAssignments().stream()
-                .flatMap(assignment -> SignalResolver.resolve(assignment.function()).stream()
+                .flatMap(assignment -> context.processor().resolveSignal(assignment.function()).stream()
                         .filter(signal -> {
                             var state = context.configuration().peripheralConfigurations()
                                     .get(signal.peripheralId());

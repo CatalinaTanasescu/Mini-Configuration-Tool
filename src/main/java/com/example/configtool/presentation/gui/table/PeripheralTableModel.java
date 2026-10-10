@@ -7,7 +7,6 @@ import javax.swing.table.AbstractTableModel;
 
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.domain.model.PeripheralDefinition;
-import com.example.configtool.domain.model.SignalResolver;
 
 public final class PeripheralTableModel extends AbstractTableModel {
 
@@ -94,7 +93,7 @@ public final class PeripheralTableModel extends AbstractTableModel {
 
     private String assignedPins(String peripheralId) {
         String pins = service.currentConfiguration().pinAssignments().stream()
-                .filter(assignment -> SignalResolver.resolve(assignment.function())
+                .filter(assignment -> service.currentProcessor().resolveSignal(assignment.function())
                         .map(signal -> signal.peripheralId().equals(peripheralId)).orElse(false))
                 .map(assignment -> assignment.pinName())
                 .sorted()

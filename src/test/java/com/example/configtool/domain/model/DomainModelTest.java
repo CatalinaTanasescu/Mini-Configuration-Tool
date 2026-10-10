@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,5 +40,16 @@ class DomainModelTest {
                 SignalResolver.resolve("LPUART3_TX").orElseThrow().category());
         assertEquals(PeripheralCategory.ETHERNET,
                 SignalResolver.resolve("ETH_RX").orElseThrow().category());
+    }
+
+    @Test
+    void interactiveAssignmentReplacesPreviousFunctionOnSamePin() {
+        Configuration configuration = new Configuration(
+                "Test", PowerMode.RUN, Map.of(), List.of())
+                .withAssignment(new PinAssignment("PTA0", "GPIO"))
+                .withAssignment(new PinAssignment("PTA0", "ADC0_CH0"));
+
+        assertEquals(List.of(new PinAssignment("PTA0", "ADC0_CH0")),
+                configuration.pinAssignments());
     }
 }

@@ -11,7 +11,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import com.example.configtool.application.service.ConfigurationService;
-import com.example.configtool.domain.model.SignalResolver;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
 public final class SummaryPanel extends JPanel {
@@ -79,7 +78,7 @@ public final class SummaryPanel extends JPanel {
                         processor.findPin(assignment.pinName()).orElseThrow().physicalNumber(),
                         assignment.pinName(),
                         assignment.function(),
-                        SignalResolver.resolve(assignment.function())
+                        processor.resolveSignal(assignment.function())
                                 .map(signal -> signal.peripheralId()).orElse("GPIO"))));
         if (configuration.pinAssignments().isEmpty()) {
             text.append("No pins are assigned.\n");

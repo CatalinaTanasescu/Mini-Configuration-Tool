@@ -12,7 +12,6 @@ import java.util.Map;
 import com.example.configtool.application.port.ConfigurationExporter;
 import com.example.configtool.domain.model.Configuration;
 import com.example.configtool.domain.model.ProcessorDefinition;
-import com.example.configtool.domain.model.SignalResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -98,7 +97,7 @@ public final class JsonConfigurationExporter implements ConfigurationExporter {
                             processor.findPin(assignment.pinName()).orElseThrow().physicalNumber());
                     value.put("pinName", assignment.pinName());
                     value.put("function", assignment.function());
-                    SignalResolver.resolve(assignment.function())
+                    processor.resolveSignal(assignment.function())
                             .ifPresent(signal -> value.put("peripheralId", signal.peripheralId()));
                     return value;
                 })
