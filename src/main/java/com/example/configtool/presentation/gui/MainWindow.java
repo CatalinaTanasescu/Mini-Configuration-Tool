@@ -75,7 +75,8 @@ public final class MainWindow extends JFrame {
         this.service = service;
         this.overviewPanel = new OverviewPanel(service);
         this.pinPanel = new PinConfigurationPanel(service, this::refreshAll, this::showError);
-        this.peripheralPanel = new PeripheralConfigurationPanel(service, this::refreshAll, this::showError);
+        this.peripheralPanel = new PeripheralConfigurationPanel(
+                service, this::refreshAll, this::showError, this::autoAssignSelectedPeripheral);
         this.validationPanel = new ValidationPanel(service, this::navigateToIssue);
         this.dependencyPanel = new DependencyPanel(service);
         this.summaryPanel = new SummaryPanel(service);

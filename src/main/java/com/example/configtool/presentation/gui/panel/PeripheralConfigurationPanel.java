@@ -21,7 +21,8 @@ public final class PeripheralConfigurationPanel extends JPanel {
     public PeripheralConfigurationPanel(
             ConfigurationService service,
             Runnable changeListener,
-            java.util.function.Consumer<RuntimeException> errorHandler) {
+            java.util.function.Consumer<RuntimeException> errorHandler,
+            Runnable autoAssignListener) {
         super(new BorderLayout(0, 14));
         setBackground(UiTheme.CANVAS);
         setBorder(BorderFactory.createEmptyBorder(24, 28, 28, 28));
@@ -32,19 +33,7 @@ public final class PeripheralConfigurationPanel extends JPanel {
                 "Enable peripherals and their associated clocks, then inspect assigned pin resources."),
                 BorderLayout.CENTER);
         JButton autoAssign = new JButton("Auto-assign selected");
-        autoAssign.addActionListener(event -> {
-            try {
-                String selected = selectedPeripheralId();
-                if (selected == null) {
-                    throw new com.example.configtool.application.service.ConfigurationException(
-                            "Select a peripheral before running auto-assignment");
-                }
-                service.autoAssignPeripheral(selected);
-                changeListener.run();
-            } catch (RuntimeException exception) {
-                errorHandler.accept(exception);
-            }
-        });
+        autoAssign.addActionListener(event -> autoAssignListener.run());
         top.add(autoAssign, BorderLayout.EAST);
         add(top, BorderLayout.NORTH);
 
