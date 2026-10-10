@@ -41,10 +41,12 @@ public final class ApplicationBootstrap {
                     ".nxp-mini-configuration-tool",
                     "templates");
         }
+        var processorRepository = new JsonProcessorRepository(externalProcessorDirectory);
         var rules = new ArrayList<>(DefaultValidationRules.create());
-        rules.addAll(new JsonValidationRuleRepository(validationDirectory).findAll());
+        rules.addAll(new JsonValidationRuleRepository(
+                validationDirectory, processorRepository.findAll()).findAll());
         return new ConfigurationService(
-                new JsonProcessorRepository(externalProcessorDirectory),
+                processorRepository,
                 new ValidationEngine(rules),
                 List.of(new JsonConfigurationExporter(), new XmlConfigurationExporter()),
                 List.of(new JsonConfigurationImporter()),

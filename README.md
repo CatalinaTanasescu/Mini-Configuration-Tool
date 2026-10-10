@@ -124,6 +124,8 @@ User-defined validation rules can be loaded at startup from JSON files in a dire
 }
 ```
 
+Rule files are checked against the processors available in the same application session. Unknown processor IDs, peripheral IDs, or assigned-function names fail at startup with a file-specific diagnostic. When a rule is not scoped with `processorIds`, each referenced peripheral and function must exist on every available processor; scope processor-specific policies explicitly.
+
 Explicit processor metadata is the primary source for signal ownership and exclusivity. For legacy definitions without a `peripherals` section, the compatibility adapter maps known naming conventions, treats the inferred signals as exclusive, maps `LPUART` to the `UART` power category, and preserves the source identifier `I2C_SCL` while associating it with `I2C0`. No LOW_POWER restrictions are invented for categories not covered by the requirements.
 
 ## Add a processor without changing Java code
@@ -171,9 +173,9 @@ Alternatively set `CONFIGTOOL_PROCESSOR_DIR`. Files are validated during startup
 
 ## Advanced workflows
 
-- **Import JSON:** reopens an exported configuration after verifying its processor, peripheral states, pins, and functions.
-- **Undo/redo:** keeps up to 100 immutable session snapshots, including processor and template transitions.
-- **Auto pin assignment:** uses deterministic backtracking to assign every unassigned signal of a selected peripheral without moving existing assignments.
+- **Import JSON:** reopens an exported configuration after verifying its processor, peripheral states, pins, and functions. Business-invalid but structurally repairable configurations are accepted intentionally; the GUI opens Validation immediately and reports the error/warning counts.
+- **Undo/redo:** keeps exactly the most recent 100 immutable session snapshots, including processor and template transitions. A new modification clears Redo history.
+- **Auto pin assignment:** uses deterministic, all-or-nothing backtracking to assign every unassigned signal of a selected peripheral without moving existing assignments. The GUI explicitly offers either pin assignment only or assignment plus peripheral/clock activation. CLI uses `auto-assign PERIPHERAL --enable` for the atomic enable variant; one Undo restores the entire operation.
 - **Configuration templates:** saves reusable JSON configurations. The default directory is `%USERPROFILE%\.nxp-mini-configuration-tool\templates`; override it with `configtool.templateDir` or `CONFIGTOOL_TEMPLATE_DIR`.
 - **Configuration diff:** compares processor, power mode, peripheral/clock states, and pin assignments against another JSON configuration.
 - **Dependency visualization:** displays peripheral enable state, clock state, signal exclusivity, and assigned pins as an expandable tree.

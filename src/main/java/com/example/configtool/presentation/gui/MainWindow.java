@@ -382,11 +382,21 @@ public final class MainWindow extends JFrame {
         try {
             service.importConfiguration("json", chooser.getSelectedFile().toPath(), true);
             refreshAll();
+            var validation = service.validate();
+            if (!validation.issues().isEmpty()) {
+                navigation.setSelectedIndex(3);
+            }
             JOptionPane.showMessageDialog(
                     this,
-                    "Configuration imported successfully.",
+                    validation.issues().isEmpty()
+                            ? "Configuration imported successfully. No validation issues were found."
+                            : "Configuration imported with " + validation.errorCount() + " error(s) and "
+                                    + validation.warningCount()
+                                    + " warning(s).\nThe Validation section is open with corrective actions.",
                     "Import complete",
-                    JOptionPane.INFORMATION_MESSAGE);
+                    validation.issues().isEmpty()
+                            ? JOptionPane.INFORMATION_MESSAGE
+                            : JOptionPane.WARNING_MESSAGE);
         } catch (RuntimeException exception) {
             showError(exception);
         }
@@ -422,13 +432,35 @@ public final class MainWindow extends JFrame {
             return;
         }
         try {
-            var assignments = service.autoAssignPeripheral(peripheralId);
+            var state = service.currentConfiguration().peripheralConfigurations().get(peripheralId);
+            boolean enablePeripheralAndClock = false;
+            if (!state.enabled() || !state.clockEnabled()) {
+                Object[] options = {"Assign and enable", "Assign pins only", "Cancel"};
+                int choice = JOptionPane.showOptionDialog(
+                        this,
+                        peripheralId + " is disabled or its clock is off.\n"
+                                + "Choose whether auto-assignment should also enable both.",
+                        "Auto-assignment policy",
+                        JOptionPane.YES_NO_CANCEL_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+                if (choice == 2 || choice == JOptionPane.CLOSED_OPTION) {
+                    return;
+                }
+                enablePeripheralAndClock = choice == 0;
+            }
+            var assignments = service.autoAssignPeripheral(peripheralId, enablePeripheralAndClock);
             refreshAll();
             JOptionPane.showMessageDialog(
                     this,
-                    assignments.isEmpty()
+                    (assignments.isEmpty()
                             ? "All signals of " + peripheralId + " already have assignments."
-                            : "Assigned " + assignments.size() + " signal(s) for " + peripheralId + ".",
+                            : "Assigned " + assignments.size() + " signal(s) for " + peripheralId + ".")
+                                    + (enablePeripheralAndClock
+                                            ? "\nThe peripheral and its clock were enabled."
+                                            : ""),
                     "Auto-assignment complete",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (RuntimeException exception) {

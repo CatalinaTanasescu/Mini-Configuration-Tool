@@ -2,6 +2,7 @@ package com.example.configtool.infrastructure.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -62,5 +63,60 @@ class JsonValidationRuleRepositoryTest {
 
         assertThrows(ValidationRuleDefinitionException.class,
                 () -> new JsonValidationRuleRepository(temporaryDirectory).findAll());
+    }
+
+    @Test
+    void rejectsUnknownProcessorReferenceAtLoadTime() throws IOException {
+        writeRule("""
+                "processorIds": ["ProcessorTypo"]
+                """);
+
+        var exception = assertThrows(ValidationRuleDefinitionException.class,
+                () -> new JsonValidationRuleRepository(temporaryDirectory).findAll());
+
+        assertTrue(exception.getMessage().contains("Unknown processor reference(s): [ProcessorTypo]"));
+    }
+
+    @Test
+    void rejectsUnknownPeripheralReferenceForRelevantProcessor() throws IOException {
+        writeRule("""
+                "processorIds": ["ProcessorA"],
+                "allEnabledPeripherals": ["LPUART_TYPO"]
+                """);
+
+        var exception = assertThrows(ValidationRuleDefinitionException.class,
+                () -> new JsonValidationRuleRepository(temporaryDirectory).findAll());
+
+        assertTrue(exception.getMessage().contains(
+                "Unknown peripheral reference(s) for ProcessorA: [LPUART_TYPO]"));
+    }
+
+    @Test
+    void rejectsUnknownAssignedFunctionReferenceForRelevantProcessor() throws IOException {
+        writeRule("""
+                "processorIds": ["ProcessorA"],
+                "anyAssignedFunctions": ["LPUART0_TYPO"]
+                """);
+
+        var exception = assertThrows(ValidationRuleDefinitionException.class,
+                () -> new JsonValidationRuleRepository(temporaryDirectory).findAll());
+
+        assertTrue(exception.getMessage().contains(
+                "Unknown assigned-function reference(s) for ProcessorA: [LPUART0_TYPO]"));
+    }
+
+    private void writeRule(String conditions) throws IOException {
+        Files.writeString(temporaryDirectory.resolve("reference-check.json"), """
+                {
+                  "schemaVersion": 1,
+                  "code": "REFERENCE_CHECK",
+                  "severity": "WARNING",
+                  "message": "Reference check.",
+                  "suggestion": "Correct the rule definition.",
+                  "when": {
+                    %s
+                  }
+                }
+                """.formatted(conditions));
     }
 }

@@ -6,10 +6,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import com.example.configtool.domain.model.ProcessorDefinition;
 import com.example.configtool.application.port.ValidationRuleRepository;
 import com.example.configtool.domain.model.PowerMode;
 import com.example.configtool.domain.validation.ValidationRule;
@@ -23,10 +27,16 @@ public final class JsonValidationRuleRepository implements ValidationRuleReposit
     private static final int SUPPORTED_SCHEMA_VERSION = 1;
     private final ObjectMapper mapper;
     private final Path directory;
+    private final List<ProcessorDefinition> processors;
 
     public JsonValidationRuleRepository(Path directory) {
+        this(directory, new JsonProcessorRepository(null).findAll());
+    }
+
+    public JsonValidationRuleRepository(Path directory, List<ProcessorDefinition> processors) {
         this.mapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         this.directory = directory;
+        this.processors = List.copyOf(Objects.requireNonNull(processors, "Processors cannot be null"));
     }
 
     @Override
@@ -62,6 +72,7 @@ public final class JsonValidationRuleRepository implements ValidationRuleReposit
                 if (conditions == null) {
                     throw new IllegalArgumentException("Missing when object");
                 }
+                validateReferences(conditions);
                 ConfiguredValidationRule rule = new ConfiguredValidationRule(
                         definition.code(),
                         definition.severity(),
@@ -84,6 +95,64 @@ public final class JsonValidationRuleRepository implements ValidationRuleReposit
             }
         }
         return List.copyOf(rules);
+    }
+
+    private void validateReferences(ConditionsFile conditions) {
+        Set<String> processorIds = values(conditions.processorIds());
+        Set<String> availableProcessorIds = processors.stream()
+                .map(ProcessorDefinition::id)
+                .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+        Set<String> unknownProcessors = new TreeSet<>(processorIds);
+        unknownProcessors.removeAll(availableProcessorIds);
+        if (!unknownProcessors.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Unknown processor reference(s): " + unknownProcessors);
+        }
+
+        List<ProcessorDefinition> relevantProcessors = processorIds.isEmpty()
+                ? processors
+                : processors.stream().filter(processor -> processorIds.contains(processor.id())).toList();
+        Set<String> peripheralReferences = union(
+                conditions.allEnabledPeripherals(), conditions.anyEnabledPeripherals());
+        Set<String> functionReferences = union(
+                conditions.allAssignedFunctions(), conditions.anyAssignedFunctions());
+
+        for (ProcessorDefinition processor : relevantProcessors) {
+            Set<String> availablePeripherals = processor.peripherals().stream()
+                    .map(peripheral -> peripheral.id())
+                    .collect(java.util.stream.Collectors.toSet());
+            Set<String> unknownPeripherals = new TreeSet<>(peripheralReferences);
+            unknownPeripherals.removeAll(availablePeripherals);
+            if (!unknownPeripherals.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Unknown peripheral reference(s) for " + processor.id() + ": "
+                                + unknownPeripherals);
+            }
+
+            Set<String> availableFunctions = processor.pins().stream()
+                    .flatMap(pin -> pin.availableFunctions().stream())
+                    .collect(java.util.stream.Collectors.toSet());
+            Set<String> unknownFunctions = new TreeSet<>(functionReferences);
+            unknownFunctions.removeAll(availableFunctions);
+            if (!unknownFunctions.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Unknown assigned-function reference(s) for " + processor.id() + ": "
+                                + unknownFunctions);
+            }
+        }
+    }
+
+    @SafeVarargs
+    private static <T> Set<T> union(Set<T>... sets) {
+        Set<T> result = new LinkedHashSet<>();
+        for (Set<T> set : sets) {
+            result.addAll(values(set));
+        }
+        return Set.copyOf(result);
+    }
+
+    private static <T> Set<T> values(Set<T> values) {
+        return values == null ? Set.of() : values;
     }
 
     private record RuleFile(

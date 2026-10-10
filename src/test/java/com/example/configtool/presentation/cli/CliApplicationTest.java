@@ -99,4 +99,24 @@ class CliApplicationTest {
         assertEquals("ProcessorA", service.currentProcessor().id());
         assertTrue(service.validate().isValid());
     }
+
+    @Test
+    void autoAssignEnableOptionCreatesAValidConfigurationAtomically() {
+        ConfigurationService service = ApplicationBootstrap.createService(null);
+        StringWriter output = new StringWriter();
+        CliApplication cli = new CliApplication(
+                service,
+                new BufferedReader(new StringReader("")),
+                new PrintWriter(output, true));
+
+        int exitCode = new CommandLine(cli).execute(
+                "--script=auto-assign LPUART0 --enable;validate;undo;summary");
+
+        assertEquals(0, exitCode);
+        assertTrue(output.toString().contains("Enabled LPUART0 and its clock."));
+        assertTrue(output.toString().contains("VALID: no errors or warnings."));
+        assertTrue(output.toString().contains("Assigned pins:      0"));
+        assertTrue(output.toString().contains("Enabled peripherals: 0"));
+        assertTrue(output.toString().contains("Enabled clocks:     0"));
+    }
 }

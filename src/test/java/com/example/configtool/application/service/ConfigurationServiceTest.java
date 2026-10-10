@@ -112,6 +112,66 @@ class ConfigurationServiceTest {
     }
 
     @Test
+    void autoAssignmentCanEnablePeripheralAndClockAsOneUndoableOperation() {
+        ConfigurationService service = serviceWith(new RecordingExporter());
+
+        var assignments = service.autoAssignPeripheral("LPUART0", true);
+
+        assertEquals(2, assignments.size());
+        assertTrue(service.currentConfiguration().peripheralConfigurations().get("LPUART0").enabled());
+        assertTrue(service.currentConfiguration().peripheralConfigurations().get("LPUART0").clockEnabled());
+        assertTrue(service.validate().isValid());
+
+        service.undo();
+
+        assertTrue(service.currentConfiguration().pinAssignments().isEmpty());
+        assertFalse(service.currentConfiguration().peripheralConfigurations().get("LPUART0").enabled());
+        assertFalse(service.currentConfiguration().peripheralConfigurations().get("LPUART0").clockEnabled());
+    }
+
+    @Test
+    void failedAutoAssignmentPreservesTheInitialConfiguration() {
+        ConfigurationService service = serviceWith(new RecordingExporter());
+        List.of("PTA2", "PTA3", "PTC4", "PTC5")
+                .forEach(pin -> service.assignPin(pin, "GPIO"));
+        Configuration initial = service.currentConfiguration();
+
+        assertThrows(ConfigurationException.class,
+                () -> service.autoAssignPeripheral("LPUART0", true));
+
+        assertEquals(initial, service.currentConfiguration());
+        assertFalse(service.currentConfiguration().peripheralConfigurations().get("LPUART0").enabled());
+        assertFalse(service.currentConfiguration().peripheralConfigurations().get("LPUART0").clockEnabled());
+    }
+
+    @Test
+    void historyKeepsExactlyOneHundredSnapshotsAndClearsRedoAfterANewChange() {
+        ConfigurationService service = serviceWith(new RecordingExporter());
+        for (int index = 0; index < 150; index++) {
+            service.setPowerMode(index % 2 == 0 ? PowerMode.LOW_POWER : PowerMode.RUN);
+        }
+
+        int undoCount = 0;
+        while (service.canUndo()) {
+            service.undo();
+            undoCount++;
+        }
+        assertEquals(100, undoCount);
+
+        int redoCount = 0;
+        while (service.canRedo()) {
+            service.redo();
+            redoCount++;
+        }
+        assertEquals(100, redoCount);
+
+        service.undo();
+        assertTrue(service.canRedo());
+        service.setPowerMode(PowerMode.RUN);
+        assertFalse(service.canRedo());
+    }
+
+    @Test
     void importsDiffsAndRestoresExportedJson() {
         ConfigurationService service = featureService();
         service.setPeripheralEnabled("LPUART0", true);

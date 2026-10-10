@@ -142,6 +142,12 @@ public final class ConfigurationService {
     }
 
     public synchronized List<PinAssignment> autoAssignPeripheral(String peripheralId) {
+        return autoAssignPeripheral(peripheralId, false);
+    }
+
+    public synchronized List<PinAssignment> autoAssignPeripheral(
+            String peripheralId,
+            boolean enablePeripheralAndClock) {
         var peripheral = requirePeripheral(peripheralId);
         Set<String> assignedSignals = currentConfiguration.pinAssignments().stream()
                 .map(PinAssignment::function)
@@ -152,7 +158,14 @@ public final class ConfigurationService {
         List<String> targets = peripheral.signals().stream()
                 .filter(signal -> !assignedSignals.contains(signal))
                 .toList();
+        Configuration prepared = currentConfiguration;
+        if (enablePeripheralAndClock) {
+            prepared = prepared
+                    .withPeripheralEnabled(peripheralId, true)
+                    .withClockEnabled(peripheralId, true);
+        }
         if (targets.isEmpty()) {
+            update(prepared);
             return List.of();
         }
 
@@ -182,7 +195,7 @@ public final class ConfigurationService {
         List<PinAssignment> added = orderedTargets.stream()
                 .map(signal -> new PinAssignment(plan.get(signal), signal))
                 .toList();
-        Configuration next = currentConfiguration;
+        Configuration next = prepared;
         for (PinAssignment assignment : added) {
             next = next.withAssignment(assignment);
         }

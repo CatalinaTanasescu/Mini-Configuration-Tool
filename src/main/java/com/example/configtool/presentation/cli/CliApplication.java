@@ -340,7 +340,12 @@ public final class CliApplication implements Callable<Integer> {
         @Override
         public Integer call() {
             parent.service.importConfiguration(format, source, discard);
-            parent.output.println("Imported " + source.toAbsolutePath() + ".");
+            var validation = parent.service.validate();
+            parent.output.printf("Imported %s with %d error(s) and %d warning(s).%n",
+                    source.toAbsolutePath(), validation.errorCount(), validation.warningCount());
+            if (!validation.issues().isEmpty()) {
+                parent.output.println("Run 'validate' to review corrective actions.");
+            }
             return 0;
         }
     }
@@ -373,15 +378,21 @@ public final class CliApplication implements Callable<Integer> {
     static final class AutoAssignCommand implements Callable<Integer> {
         @ParentCommand CliApplication parent;
         @Parameters(index = "0", paramLabel = "PERIPHERAL") String peripheralId;
+        @Option(names = "--enable",
+                description = "Enable the peripheral and its clock in the same undoable operation.")
+        boolean enable;
 
         @Override
         public Integer call() {
-            var assignments = parent.service.autoAssignPeripheral(peripheralId);
+            var assignments = parent.service.autoAssignPeripheral(peripheralId, enable);
             if (assignments.isEmpty()) {
                 parent.output.println("No assignment changes were required for " + peripheralId + ".");
             } else {
                 assignments.forEach(assignment -> parent.output.printf(
                         "Assigned %-18s to %s.%n", assignment.function(), assignment.pinName()));
+            }
+            if (enable) {
+                parent.output.println("Enabled " + peripheralId + " and its clock.");
             }
             return 0;
         }
