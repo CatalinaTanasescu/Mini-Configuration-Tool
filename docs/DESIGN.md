@@ -22,7 +22,9 @@ This shape prevents Swing widgets, Picocli commands, Jackson annotations, and fi
 
 `Configuration` represents user choices separately: processor ID, power mode, peripheral and clock states, and pin assignments. Configuration operations return a new snapshot. `ConfigurationService` owns the current snapshot, tracks unsaved changes, prevents unsupported assignment operations, and requires explicit consent before a dirty configuration is reset by processor selection.
 
-Peripheral instances are derived from preserved signal identifiers through the isolated `SignalResolver`. The raw identifier `I2C_SCL` remains unchanged but maps to `I2C0`; `LPUART` remains the signal prefix while its power category is `UART`; `ETH_*` maps to the Ethernet category. The resolver is the documented extension point when future hardware uses a different naming convention.
+Peripheral instances and signal policies can be declared explicitly in each processor JSON through optional `peripherals` metadata (`id`, `category`, `signals`, and `exclusiveSignals`). `ProcessorDefinition` is the context-aware resolver used by validation, GUI, summary, and export, so an identifier such as `WAKE_REQUEST` can belong to `SAFETY0` without a Java regex or code change. Metadata is validated against the pin functions, duplicate signal ownership is rejected, and exclusivity must be a subset of the peripheral's signals.
+
+`SignalResolver` remains an isolated compatibility adapter for definitions that do not yet contain metadata. The raw identifier `I2C_SCL` remains unchanged but maps to `I2C0`; `LPUART` remains the signal prefix while its power category is `UART`; `ETH_*` maps to the Ethernet category. Convention-derived legacy signals retain the previous exclusive behavior. Explicit definitions choose exclusivity per signal and can therefore model repeatable non-GPIO signals.
 
 Bundled definitions are listed by `processors/index.json`, which works identically from the classpath and the shaded JAR. `JsonProcessorRepository` also scans an optional external directory supplied through `configtool.processorDir` or `CONFIGTOOL_PROCESSOR_DIR`. Therefore, a schema-compatible `ProcessorD` can appear in GUI and CLI without recompilation. Duplicate IDs across bundled and external sources are rejected rather than silently overridden.
 
@@ -30,7 +32,7 @@ Bundled definitions are listed by `processors/index.json`, which works identical
 
 `ValidationRule` is a small functional interface. `ValidationEngine` receives a list of rules, executes each rule, and returns a deterministic `ValidationResult` containing structured issues. Every issue carries a diagnostic code, severity, location, explanation, and corrective action.
 
-The mandatory rules cover pin multiplexing, peripheral clock dependency, and documented power-mode compatibility. Independent additional rules cover unsupported pin functions, duplicate exclusive signals, and assignments to disabled peripherals. A separate advisory rule warns when an enabled peripheral has no resources. Errors block export; warnings remain visible but allow export.
+The mandatory rules cover pin multiplexing, peripheral clock dependency, and documented power-mode compatibility. Independent additional rules cover unsupported pin functions, duplicate signals marked exclusive by processor metadata, and assignments to disabled peripherals. A separate advisory rule warns when an enabled peripheral has no resources. Errors block export; warnings remain visible but allow export. Interactive assignment replaces the previous function on the same pin; `PinMultiplexingRule` remains a defensive boundary for imported or independently constructed snapshots, with tests for both paths.
 
 No monolithic validator or interface-specific rule set exists. A new rule is implemented and registered without rewriting `ValidationEngine`. Both adapters call `ConfigurationService.validate()`, and an integration test builds the same configuration through GUI table models and CLI commands, then compares state and validation results.
 
@@ -40,7 +42,7 @@ The Swing UI is a multi-pane engineering workspace with a restrained theme, proc
 
 The Picocli adapter maintains one in-memory configuration across an interactive session. It covers processor listing and selection, pins, peripherals, clocks, assignments, power mode, validation, summary, export, and help. A semicolon-delimited scripted mode supports deterministic smoke tests without creating a second state model.
 
-`ConfigurationExporter` decouples output format from configuration behavior. The JSON adapter emits schema version `1.0`, processor ID, power mode, peripheral/clock states, and ordered pin assignments. It writes to a temporary sibling and then replaces the target atomically when supported, preventing partially written output. Another exporter can be injected without changing the service, domain, GUI, or CLI.
+`ConfigurationExporter` decouples output format from configuration behavior. The JSON adapter emits schema version `1.0`, processor ID, power mode, peripheral/clock states, and ordered pin assignments. It writes to a temporary sibling and attempts an atomic replacement. Filesystems that reject atomic moves use an ordinary replacement fallback; therefore atomicity is not guaranteed in every environment, although configuration generation never writes directly into the target file. Another exporter can be injected without changing the service, domain, GUI, or CLI.
 
 ## Decisions and trade-offs
 

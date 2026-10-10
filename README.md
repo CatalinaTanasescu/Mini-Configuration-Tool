@@ -95,12 +95,12 @@ Mandatory constraints:
 Additional independent rules:
 
 - assigned functions must be supported by the selected pin;
-- an exclusive signal cannot be active on more than one pin;
+- a signal explicitly declared exclusive cannot be active on more than one pin;
 - an assignment cannot target a disabled peripheral.
 
 An enabled peripheral without assigned resources is reported as a warning. Errors block export; warnings do not.
 
-The naming adapter deliberately maps `LPUART` signals to the `UART` power category and preserves the source identifier `I2C_SCL` while associating it with `I2C0`. No LOW_POWER restrictions are invented for categories not covered by the requirements.
+Explicit processor metadata is the primary source for signal ownership and exclusivity. For legacy definitions without a `peripherals` section, the compatibility adapter maps known naming conventions, treats the inferred signals as exclusive, maps `LPUART` to the `UART` power category, and preserves the source identifier `I2C_SCL` while associating it with `I2C0`. No LOW_POWER restrictions are invented for categories not covered by the requirements.
 
 ## Add a processor without changing Java code
 
@@ -115,11 +115,26 @@ Create a JSON file that follows schema version 1:
     {
       "name": "PTX0",
       "physicalNumber": 1,
-      "availableFunctions": ["GPIO", "LPUART9_TX"]
+      "availableFunctions": ["GPIO", "WAKE_REQUEST", "STATUS_BUS"]
+    },
+    {
+      "name": "PTX1",
+      "physicalNumber": 2,
+      "availableFunctions": ["GPIO", "WAKE_REQUEST", "STATUS_BUS"]
+    }
+  ],
+  "peripherals": [
+    {
+      "id": "SAFETY0",
+      "category": "OTHER",
+      "signals": ["WAKE_REQUEST", "STATUS_BUS"],
+      "exclusiveSignals": ["WAKE_REQUEST"]
     }
   ]
 }
 ```
+
+The optional `peripherals` metadata makes signal ownership independent of identifier naming. `exclusiveSignals` is an explicit subset of `signals`; in the example, `WAKE_REQUEST` may be assigned to only one pin while `STATUS_BUS` is repeatable. Metadata may be introduced gradually because uncovered legacy signals still use `SignalResolver`.
 
 Place one or more definitions in an external directory and provide it at startup:
 
@@ -134,7 +149,7 @@ Alternatively set `CONFIGTOOL_PROCESSOR_DIR`. Files are validated during startup
 - Add validation by implementing `ValidationRule` and registering it in `DefaultValidationRules` or in another composition root. `ValidationEngine` does not change.
 - Add an export format by implementing `ConfigurationExporter` and injecting it into `ConfigurationService`. Configuration and validation logic do not change.
 - Add another interface by calling the same `ConfigurationService`; Swing and Picocli are existing examples.
-- New signal naming conventions are isolated in `SignalResolver`. Extending that policy does not change raw processor JSON.
+- Define new peripheral or signal types in processor JSON with explicit `peripherals` metadata. `SignalResolver` remains a compatibility adapter for legacy definitions.
 
 ## Project structure
 
