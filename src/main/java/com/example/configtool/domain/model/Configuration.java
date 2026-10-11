@@ -9,6 +9,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** Immutable user-selected state, deliberately separate from hardware capabilities. */
+/**
+ * Immutable snapshot of all choices made for one processor.
+ * Static hardware capabilities remain in {@link ProcessorDefinition}; keeping them separate from
+ * selected state makes history, templates, comparison, and interface-independent testing simpler.
+ */
 public final class Configuration {
 
     private final String processorId;
@@ -16,6 +21,12 @@ public final class Configuration {
     private final Map<String, PeripheralConfiguration> peripheralConfigurations;
     private final List<PinAssignment> pinAssignments;
 
+    /**
+     * @param processorId processor to which this snapshot belongs
+     * @param powerMode selected operating mode
+     * @param peripheralConfigurations state of every processor peripheral
+     * @param pinAssignments selected pin functions
+     */
     public Configuration(
             String processorId,
             PowerMode powerMode,
@@ -30,6 +41,10 @@ public final class Configuration {
         this.pinAssignments = List.copyOf(pinAssignments);
     }
 
+    /**
+     * @param processor hardware definition used to initialize peripheral states
+     * @return an empty RUN-mode snapshot with every peripheral and clock disabled
+     */
     public static Configuration emptyFor(ProcessorDefinition processor) {
         Map<String, PeripheralConfiguration> states = new LinkedHashMap<>();
         processor.peripherals().forEach(peripheral -> states.put(
@@ -53,14 +68,20 @@ public final class Configuration {
         return pinAssignments;
     }
 
+    /**
+     * @param pinName logical pin name
+     * @return assignment for the pin, if present
+     */
     public Optional<PinAssignment> assignmentFor(String pinName) {
         return pinAssignments.stream().filter(assignment -> assignment.pinName().equals(pinName)).findFirst();
     }
 
+    /** @return a copy with the requested power mode */
     public Configuration withPowerMode(PowerMode mode) {
         return new Configuration(processorId, mode, peripheralConfigurations, pinAssignments);
     }
 
+    /** @return a copy with the requested peripheral enable state */
     public Configuration withPeripheralEnabled(String peripheralId, boolean enabled) {
         PeripheralConfiguration current = requirePeripheral(peripheralId);
         Map<String, PeripheralConfiguration> next = new LinkedHashMap<>(peripheralConfigurations);
@@ -68,6 +89,7 @@ public final class Configuration {
         return new Configuration(processorId, powerMode, next, pinAssignments);
     }
 
+    /** @return a copy with the requested peripheral clock state */
     public Configuration withClockEnabled(String peripheralId, boolean enabled) {
         PeripheralConfiguration current = requirePeripheral(peripheralId);
         Map<String, PeripheralConfiguration> next = new LinkedHashMap<>(peripheralConfigurations);
@@ -75,6 +97,13 @@ public final class Configuration {
         return new Configuration(processorId, powerMode, next, pinAssignments);
     }
 
+    /**
+     * Returns a copy containing the assignment. Any previous assignment for the same physical pin
+     * is removed, which models the normal interactive multiplexing behavior.
+     *
+     * @param assignment pin/function pair to store
+     * @return updated immutable snapshot
+     */
     public Configuration withAssignment(PinAssignment assignment) {
         List<PinAssignment> next = new ArrayList<>(pinAssignments);
         next.removeIf(existing -> existing.pinName().equals(assignment.pinName()));
@@ -82,6 +111,7 @@ public final class Configuration {
         return new Configuration(processorId, powerMode, peripheralConfigurations, next);
     }
 
+    /** @return a copy without an assignment for {@code pinName} */
     public Configuration withoutAssignment(String pinName) {
         List<PinAssignment> next = pinAssignments.stream()
                 .filter(existing -> !existing.pinName().equals(pinName))

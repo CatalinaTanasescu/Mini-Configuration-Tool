@@ -15,6 +15,11 @@ import com.example.configtool.application.port.ConfigurationExporter;
 import com.example.configtool.domain.model.Configuration;
 import com.example.configtool.domain.model.ProcessorDefinition;
 
+/**
+ * Streaming XML implementation of the export port.
+ * It serializes the same domain snapshot as the JSON adapter and uses the same temporary-file
+ * replacement strategy, demonstrating that output formats do not affect configuration logic.
+ */
 public final class XmlConfigurationExporter implements ConfigurationExporter {
 
     public static final String FORMAT_ID = "xml";

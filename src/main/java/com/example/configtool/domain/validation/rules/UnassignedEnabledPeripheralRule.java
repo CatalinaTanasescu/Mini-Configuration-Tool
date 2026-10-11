@@ -9,6 +9,7 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/** Warns when an enabled peripheral has no assigned signal resources. */
 public final class UnassignedEnabledPeripheralRule implements ValidationRule {
 
     public static final String CODE = "PERIPHERAL_WITHOUT_RESOURCES";

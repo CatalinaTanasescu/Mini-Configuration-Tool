@@ -7,6 +7,7 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/** Reports assignments owned by a peripheral that is currently disabled. */
 public final class DisabledPeripheralAssignmentRule implements ValidationRule {
 
     public static final String CODE = "DISABLED_PERIPHERAL_ASSIGNMENT";

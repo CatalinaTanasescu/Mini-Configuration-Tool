@@ -11,6 +11,10 @@ import javax.swing.border.Border;
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatDarkLaf;
 
+/**
+ * Central Swing look-and-feel and color-palette configuration.
+ * Panels consume these shared semantic colors so light and dark modes remain visually consistent.
+ */
 public final class UiTheme {
 
     public static Color CANVAS;
@@ -39,10 +43,14 @@ public final class UiTheme {
     private UiTheme() {
     }
 
+    /** Installs the default light theme. */
     public static void install() {
         install(false);
     }
 
+    /**
+     * @param darkMode {@code true} for FlatLaf Dark, {@code false} for FlatLaf IntelliJ
+     */
     public static void install(boolean darkMode) {
         dark = darkMode;
         applyPalette(darkMode);
@@ -67,16 +75,19 @@ public final class UiTheme {
         UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 13));
     }
 
+    /** @return whether the currently installed palette is dark */
     public static boolean isDark() {
         return dark;
     }
 
+    /** @return standard border and padding used for surface panels */
     public static Border panelBorder() {
         return BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER),
                 BorderFactory.createEmptyBorder(16, 18, 16, 18));
     }
 
+    /** @param component component to style as a primary heading */
     public static void applyHeading(JComponent component) {
         component.setFont(new Font("Segoe UI", Font.BOLD, 20));
         component.setForeground(TEXT);

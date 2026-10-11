@@ -7,6 +7,7 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/** Requires every enabled peripheral to have its associated clock enabled. */
 public final class PeripheralClockRule implements ValidationRule {
 
     public static final String CODE = "PERIPHERAL_CLOCK";

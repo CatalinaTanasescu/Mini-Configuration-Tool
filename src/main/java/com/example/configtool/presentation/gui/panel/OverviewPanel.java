@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/** Dashboard panel presenting high-level configuration metrics and workflow guidance. */
 public final class OverviewPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
@@ -22,6 +23,7 @@ public final class OverviewPanel extends JPanel {
     private final JLabel assignedValue = metricValue();
     private final JLabel validationValue = metricValue();
 
+    /** @param service source of summary metrics */
     public OverviewPanel(ConfigurationService service) {
         super(new BorderLayout(0, 18));
         this.service = service;
@@ -47,6 +49,7 @@ public final class OverviewPanel extends JPanel {
         add(body, BorderLayout.CENTER);
     }
 
+    /** Refreshes all displayed metrics from the current session. */
     public void refresh() {
         var summary = service.summary();
         processorValue.setText(summary.processorId());

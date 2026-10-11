@@ -15,11 +15,17 @@ import com.example.configtool.domain.model.PowerMode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Strict Jackson-based reader for versioned configuration JSON.
+ * This adapter validates document shape and primitive values; processor-specific references and
+ * business rules remain responsibilities of the application service and validation engine.
+ */
 public final class JsonConfigurationImporter implements ConfigurationImporter {
 
     private static final String SUPPORTED_SCHEMA_VERSION = "1.0";
     private final ObjectMapper mapper;
 
+    /** Creates an importer with an isolated Jackson mapper. */
     public JsonConfigurationImporter() {
         this(new ObjectMapper());
     }

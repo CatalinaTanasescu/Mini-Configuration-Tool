@@ -2,6 +2,16 @@ package com.example.configtool.domain.validation;
 
 import java.util.Objects;
 
+/**
+ * Structured, presentation-independent validation diagnostic.
+ *
+ * @param code stable diagnostic identifier
+ * @param severity error or warning classification
+ * @param message explanation of the detected condition
+ * @param suggestion actionable corrective guidance
+ * @param pinName related pin, when applicable
+ * @param peripheralId related peripheral, when applicable
+ */
 public record ValidationIssue(
         String code,
         ValidationSeverity severity,
@@ -10,6 +20,7 @@ public record ValidationIssue(
         String pinName,
         String peripheralId) {
 
+    /** Validates required diagnostic fields and normalizes the optional suggestion. */
     public ValidationIssue {
         code = requireText(code, "Validation code");
         severity = Objects.requireNonNull(severity, "Validation severity cannot be null");
@@ -17,6 +28,7 @@ public record ValidationIssue(
         suggestion = suggestion == null ? "" : suggestion;
     }
 
+    /** @return compact human-readable location assembled from optional context fields */
     public String location() {
         if (pinName != null && peripheralId != null) {
             return pinName + " / " + peripheralId;

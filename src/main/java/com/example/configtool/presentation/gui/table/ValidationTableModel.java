@@ -6,17 +6,20 @@ import javax.swing.table.AbstractTableModel;
 
 import com.example.configtool.domain.validation.ValidationIssue;
 
+/** Read-only Swing table projection of structured {@link ValidationIssue} values. */
 public final class ValidationTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
     private static final String[] COLUMNS = {"Severity", "Code", "Location", "Explanation", "Suggested action"};
     private List<ValidationIssue> issues = List.of();
 
+    /** @param issues complete issue list to display */
     public void setIssues(List<ValidationIssue> issues) {
         this.issues = List.copyOf(issues);
         fireTableDataChanged();
     }
 
+    /** @return validation issue represented by the model row */
     public ValidationIssue issueAt(int modelRow) {
         return issues.get(modelRow);
     }

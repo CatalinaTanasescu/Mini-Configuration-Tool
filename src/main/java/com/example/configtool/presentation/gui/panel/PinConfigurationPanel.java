@@ -20,6 +20,7 @@ import com.example.configtool.presentation.gui.table.FunctionCellEditor;
 import com.example.configtool.presentation.gui.table.PinTableModel;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/** Searchable pin-multiplexing editor backed by {@link PinTableModel}. */
 public final class PinConfigurationPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
@@ -28,6 +29,11 @@ public final class PinConfigurationPanel extends JPanel {
     private final JTextField searchField = new JTextField();
     private final TableRowSorter<PinTableModel> sorter;
 
+    /**
+     * @param service shared application facade
+     * @param changeListener invoked after successful pin edits
+     * @param errorHandler presentation-level error callback
+     */
     public PinConfigurationPanel(
             ConfigurationService service,
             Runnable changeListener,
@@ -78,15 +84,18 @@ public final class PinConfigurationPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /** Reloads pin data while preserving the current filter text. */
     public void refresh() {
         model.refresh();
     }
 
+    /** Moves keyboard focus to the pin/function filter field. */
     public void focusSearch() {
         searchField.requestFocusInWindow();
         searchField.selectAll();
     }
 
+    /** @param pinName pin to reveal and select, typically from a validation issue */
     public void focusPin(String pinName) {
         searchField.setText(pinName);
         applyFilter();

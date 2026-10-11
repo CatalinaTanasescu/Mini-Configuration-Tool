@@ -19,6 +19,10 @@ import com.example.configtool.domain.validation.ValidationSeverity;
 import com.example.configtool.presentation.gui.table.ValidationTableModel;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/**
+ * Displays structured validation issues and forwards navigation requests to the owning window.
+ * The panel consumes the same validation result exposed by the CLI.
+ */
 public final class ValidationPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
@@ -27,6 +31,10 @@ public final class ValidationPanel extends JPanel {
     private final JTable table = new JTable(model);
     private final JLabel resultLabel = new JLabel();
 
+    /**
+     * @param service source of validation results
+     * @param navigationHandler callback used to reveal a related pin or peripheral
+     */
     public ValidationPanel(ConfigurationService service, Consumer<ValidationIssue> navigationHandler) {
         super(new BorderLayout(0, 14));
         this.service = service;
@@ -72,6 +80,7 @@ public final class ValidationPanel extends JPanel {
         add(hint, BorderLayout.SOUTH);
     }
 
+    /** Runs validation and replaces the displayed issue set. */
     public void refresh() {
         var result = service.validate();
         model.setIssues(result.issues());

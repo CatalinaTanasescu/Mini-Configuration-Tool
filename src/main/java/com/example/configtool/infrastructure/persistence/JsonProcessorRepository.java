@@ -23,7 +23,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/** Loads bundled processors from an explicit manifest and optional external JSON files. */
+/**
+ * Loads bundled processors from an explicit classpath manifest and optional external JSON files.
+ * External definitions extend the catalog without GUI or service changes. Schema, metadata, and
+ * duplicate identifiers are validated eagerly so malformed hardware data fails at startup.
+ */
 public final class JsonProcessorRepository implements ProcessorRepository {
 
     private static final String INDEX_RESOURCE = "processors/index.json";
@@ -34,6 +38,11 @@ public final class JsonProcessorRepository implements ProcessorRepository {
     private final Path externalDirectory;
     private final Map<String, ProcessorDefinition> processors;
 
+    /**
+     * @param externalDirectory optional directory containing additional processor JSON files;
+     *        {@code null} loads bundled definitions only
+     * @throws ProcessorDefinitionException if discovery or validation fails
+     */
     public JsonProcessorRepository(Path externalDirectory) {
         this(new ObjectMapper(), Thread.currentThread().getContextClassLoader(), externalDirectory);
     }

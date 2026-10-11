@@ -8,6 +8,11 @@ import javax.swing.table.AbstractTableModel;
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.domain.model.PeripheralDefinition;
 
+/**
+ * Swing table adapter for peripheral enable, clock, and resource state.
+ * Editable cells delegate changes to {@link ConfigurationService}; the model contains no duplicate
+ * business rules.
+ */
 public final class PeripheralTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
@@ -19,6 +24,11 @@ public final class PeripheralTableModel extends AbstractTableModel {
     private final Runnable changeListener;
     private final Consumer<RuntimeException> errorHandler;
 
+    /**
+     * @param service shared application facade
+     * @param changeListener invoked after successful edits
+     * @param errorHandler receives workflow failures for presentation
+     */
     public PeripheralTableModel(
             ConfigurationService service,
             Runnable changeListener,
@@ -83,10 +93,12 @@ public final class PeripheralTableModel extends AbstractTableModel {
         }
     }
 
+    /** @return processor peripheral represented by the model row */
     public PeripheralDefinition peripheralAt(int modelRow) {
         return service.currentProcessor().peripherals().get(modelRow);
     }
 
+    /** Signals that every row may have changed after a session transition. */
     public void refresh() {
         fireTableDataChanged();
     }

@@ -8,6 +8,7 @@ import javax.swing.JPanel;
 
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/** Package-local factory for consistent headings, metric cards, and panel styling. */
 final class PanelSupport {
 
     private PanelSupport() {

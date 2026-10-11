@@ -14,6 +14,14 @@ import com.example.configtool.infrastructure.persistence.JsonConfigurationTempla
 import com.example.configtool.infrastructure.persistence.JsonProcessorRepository;
 import com.example.configtool.infrastructure.persistence.JsonValidationRuleRepository;
 
+/**
+ * Application composition root.
+ *
+ * <p>This is the only production location that knows concrete infrastructure implementations. It
+ * constructs repositories, importers, exporters, and validation rules, then injects them into
+ * {@link ConfigurationService}. Keeping object assembly here preserves separation of concerns and
+ * makes the service easy to test with alternative collaborators.</p>
+ */
 public final class ApplicationBootstrap {
 
     public static final String PROCESSOR_DIRECTORY_PROPERTY = "configtool.processorDir";
@@ -26,10 +34,16 @@ public final class ApplicationBootstrap {
     private ApplicationBootstrap() {
     }
 
+    /** @return a fully composed service using environment and system-property configuration */
     public static ConfigurationService createService() {
         return createService(resolveExternalProcessorDirectory());
     }
 
+    /**
+     * @param externalProcessorDirectory optional processor-definition directory; {@code null} uses
+     *        bundled definitions only
+     * @return a fully composed application service
+     */
     public static ConfigurationService createService(Path externalProcessorDirectory) {
         Path validationDirectory = resolveDirectory(
                 VALIDATION_DIRECTORY_PROPERTY, VALIDATION_DIRECTORY_ENVIRONMENT);

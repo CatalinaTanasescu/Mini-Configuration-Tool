@@ -10,6 +10,11 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/**
+ * Defensive rule that rejects multiple functions on one physical pin.
+ * Interactive edits replace an existing assignment, but this rule also protects configurations
+ * constructed by importers or other adapters.
+ */
 public final class PinMultiplexingRule implements ValidationRule {
 
     public static final String CODE = "PIN_MULTIPLEXING";

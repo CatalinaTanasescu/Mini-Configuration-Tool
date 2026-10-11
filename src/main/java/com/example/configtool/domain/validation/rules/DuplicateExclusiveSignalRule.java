@@ -10,6 +10,7 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/** Enforces per-signal exclusivity declared by the selected processor metadata. */
 public final class DuplicateExclusiveSignalRule implements ValidationRule {
 
     public static final String CODE = "DUPLICATE_EXCLUSIVE_SIGNAL";

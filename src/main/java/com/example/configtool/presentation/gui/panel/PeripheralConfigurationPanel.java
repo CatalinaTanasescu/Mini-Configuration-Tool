@@ -12,12 +12,23 @@ import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.presentation.gui.table.PeripheralTableModel;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/**
+ * Editable peripheral and clock table.
+ * Mutations flow through its table model to the shared service; callbacks let the owning window
+ * refresh related panels and present errors without coupling this panel to navigation logic.
+ */
 public final class PeripheralConfigurationPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
     private final PeripheralTableModel model;
     private final JTable table;
 
+    /**
+     * @param service shared application facade
+     * @param changeListener invoked after a successful edit
+     * @param errorHandler presentation-level error callback
+     * @param autoAssignListener callback that applies the window's explicit auto-assignment policy
+     */
     public PeripheralConfigurationPanel(
             ConfigurationService service,
             Runnable changeListener,
@@ -56,10 +67,12 @@ public final class PeripheralConfigurationPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /** Reloads table rows from the selected processor and current configuration. */
     public void refresh() {
         model.refresh();
     }
 
+    /** @param peripheralId peripheral to select and scroll into view */
     public void focusPeripheral(String peripheralId) {
         for (int row = 0; row < model.getRowCount(); row++) {
             if (model.peripheralAt(row).id().equals(peripheralId)) {
@@ -71,6 +84,7 @@ public final class PeripheralConfigurationPanel extends JPanel {
         }
     }
 
+    /** @return selected peripheral identifier, or {@code null} when no row is selected */
     public String selectedPeripheralId() {
         int viewRow = table.getSelectedRow();
         return viewRow < 0

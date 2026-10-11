@@ -13,12 +13,14 @@ import javax.swing.JTextArea;
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/** Read-only, export-oriented summary of the current configuration session. */
 public final class SummaryPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
     private final ConfigurationService service;
     private final JTextArea summary = new JTextArea();
 
+    /** @param service source of summary and validation data */
     public SummaryPanel(ConfigurationService service) {
         super(new BorderLayout(0, 14));
         this.service = service;
@@ -39,6 +41,7 @@ public final class SummaryPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /** Refreshes the textual summary from the current session. */
     public void refresh() {
         var processor = service.currentProcessor();
         var configuration = service.currentConfiguration();

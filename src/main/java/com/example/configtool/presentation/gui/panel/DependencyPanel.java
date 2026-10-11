@@ -13,12 +13,14 @@ import javax.swing.tree.DefaultTreeModel;
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/** Read-only Swing view of peripheral, clock, signal, and assigned-pin relationships. */
 public final class DependencyPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
     private final ConfigurationService service;
     private final JTree tree = new JTree();
 
+    /** @param service source of the current processor and configuration snapshot */
     public DependencyPanel(ConfigurationService service) {
         super(new BorderLayout(0, 14));
         this.service = service;
@@ -36,6 +38,7 @@ public final class DependencyPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /** Rebuilds the tree from the current service snapshot. */
     public void refresh() {
         var processor = service.currentProcessor();
         var configuration = service.currentConfiguration();

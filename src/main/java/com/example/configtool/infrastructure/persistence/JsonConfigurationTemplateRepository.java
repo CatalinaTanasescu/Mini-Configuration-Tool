@@ -15,6 +15,11 @@ import com.example.configtool.domain.model.ProcessorDefinition;
 import com.example.configtool.infrastructure.export.JsonConfigurationExporter;
 import com.example.configtool.infrastructure.importer.JsonConfigurationImporter;
 
+/**
+ * Filesystem-backed template repository that reuses the production JSON importer and exporter.
+ * Template names are constrained before path resolution so a name cannot escape the configured
+ * directory.
+ */
 public final class JsonConfigurationTemplateRepository implements ConfigurationTemplateRepository {
 
     private static final Pattern VALID_NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,63}");
@@ -22,6 +27,7 @@ public final class JsonConfigurationTemplateRepository implements ConfigurationT
     private final JsonConfigurationExporter exporter = new JsonConfigurationExporter();
     private final JsonConfigurationImporter importer = new JsonConfigurationImporter();
 
+    /** @param directory root directory dedicated to template JSON files */
     public JsonConfigurationTemplateRepository(Path directory) {
         this.directory = directory.toAbsolutePath().normalize();
     }

@@ -47,6 +47,12 @@ import com.example.configtool.presentation.gui.panel.SummaryPanel;
 import com.example.configtool.presentation.gui.panel.ValidationPanel;
 import com.example.configtool.presentation.gui.theme.UiTheme;
 
+/**
+ * Main Swing presentation adapter and navigation shell.
+ * The window coordinates panels and dialogs, while all configuration mutations are delegated to
+ * {@link ConfigurationService}. Rebuilding the window for a theme change retains the same service,
+ * so presentation state changes do not reset the configuration session.
+ */
 public final class MainWindow extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -70,6 +76,9 @@ public final class MainWindow extends JFrame {
     private final SummaryPanel summaryPanel;
     private boolean updating;
 
+    /**
+     * @param service injected application facade shared by every child panel
+     */
     public MainWindow(ConfigurationService service) {
         super("NXP Mini Configuration Tool");
         this.service = service;

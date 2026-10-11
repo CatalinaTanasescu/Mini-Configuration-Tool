@@ -22,6 +22,11 @@ import com.example.configtool.domain.validation.rules.ConfiguredValidationRule;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Loads declarative validation rules from a user-managed JSON directory.
+ * References are checked against discovered processor definitions before rules reach the engine,
+ * preventing misspelled conditions from becoming silently inactive policies.
+ */
 public final class JsonValidationRuleRepository implements ValidationRuleRepository {
 
     private static final int SUPPORTED_SCHEMA_VERSION = 1;
@@ -29,10 +34,21 @@ public final class JsonValidationRuleRepository implements ValidationRuleReposit
     private final Path directory;
     private final List<ProcessorDefinition> processors;
 
+    /**
+     * Creates a repository that validates references against bundled processors.
+     *
+     * @param directory rule directory, or {@code null} to disable custom rules
+     */
     public JsonValidationRuleRepository(Path directory) {
         this(directory, new JsonProcessorRepository(null).findAll());
     }
 
+    /**
+     * Creates a repository using the same processor catalog as the application session.
+     *
+     * @param directory rule directory, or {@code null} to disable custom rules
+     * @param processors processor definitions used to validate rule references
+     */
     public JsonValidationRuleRepository(Path directory, List<ProcessorDefinition> processors) {
         this.mapper = new ObjectMapper().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         this.directory = directory;

@@ -4,8 +4,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Immutable hardware capability for one physical package pin.
+ *
+ * @param name logical pin name
+ * @param physicalNumber one-based package position
+ * @param availableFunctions functions supported by the pin multiplexer
+ */
 public record PinDefinition(String name, int physicalNumber, List<String> availableFunctions) {
 
+    /** Validates pin identity and defensively copies the function list. */
     public PinDefinition {
         name = requireIdentifier(name, "Pin name");
         if (physicalNumber <= 0) {
@@ -24,6 +32,7 @@ public record PinDefinition(String name, int physicalNumber, List<String> availa
         }
     }
 
+    /** @return whether the requested function is available on this pin */
     public boolean supportsFunction(String function) {
         return availableFunctions.contains(function);
     }

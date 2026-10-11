@@ -8,6 +8,7 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/** Verifies that each assignment refers to an existing pin and one of its supported functions. */
 public final class SupportedFunctionRule implements ValidationRule {
 
     public static final String CODE = "SUPPORTED_FUNCTION";

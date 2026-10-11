@@ -5,8 +5,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Explicitly isolates the naming conventions used by the exercise. Raw hardware
- * identifiers remain unchanged in processor definition files.
+ * Compatibility adapter that infers peripheral ownership from legacy function names.
+ * Raw identifiers remain unchanged in processor definition files. New processor definitions should
+ * prefer explicit peripheral metadata because naming conventions cannot describe every signal type.
  */
 public final class SignalResolver {
 
@@ -19,6 +20,10 @@ public final class SignalResolver {
     private SignalResolver() {
     }
 
+    /**
+     * @param function raw pin-function identifier
+     * @return inferred signal metadata, or empty when no legacy convention matches
+     */
     public static Optional<SignalDescriptor> resolve(String function) {
         if (function == null || function.isBlank() || "GPIO".equals(function)) {
             return Optional.empty();

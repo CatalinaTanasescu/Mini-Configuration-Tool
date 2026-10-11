@@ -20,6 +20,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
+/**
+ * Picocli presentation adapter for interactive and scripted configuration workflows.
+ * Commands translate textual input into calls on {@link ConfigurationService}; they do not
+ * reimplement validation or configuration rules, which keeps CLI results aligned with the GUI.
+ */
 @Command(
         name = "configtool",
         description = "Configure processor pins, peripherals, clocks and power mode.",
@@ -65,12 +70,24 @@ public final class CliApplication implements Callable<Integer> {
     @Option(names = "--no-banner", description = "Suppress the interactive banner.")
     private boolean noBanner;
 
+    /**
+     * Creates an interactive CLI using standard input and output.
+     *
+     * @param service shared application facade
+     */
     public CliApplication(ConfigurationService service) {
         this(service,
                 new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)),
                 new PrintWriter(System.out, true));
     }
 
+    /**
+     * Creates a CLI with injected streams, primarily for deterministic adapter tests.
+     *
+     * @param service shared application facade
+     * @param input command input
+     * @param output command output and diagnostics
+     */
     public CliApplication(ConfigurationService service, BufferedReader input, PrintWriter output) {
         this.service = service;
         this.input = input;
@@ -78,6 +95,12 @@ public final class CliApplication implements Callable<Integer> {
     }
 
     @Override
+    /**
+     * Runs a scripted session when {@code --script} is present, otherwise starts an interactive loop.
+     *
+     * @return process-style exit code
+     * @throws IOException if interactive input cannot be read
+     */
     public Integer call() throws IOException {
         CommandLine shell = configuredCommandLine();
         if (script != null && !script.isBlank()) {
@@ -109,6 +132,11 @@ public final class CliApplication implements Callable<Integer> {
         return 0;
     }
 
+    /**
+     * Builds the command tree and centralizes user-facing exception formatting.
+     *
+     * @return configured Picocli command dispatcher
+     */
     public CommandLine configuredCommandLine() {
         CommandLine commandLine = new CommandLine(this);
         commandLine.setOut(output);

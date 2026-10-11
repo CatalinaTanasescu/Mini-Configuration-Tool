@@ -11,7 +11,11 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
-/** A declarative rule loaded from a user-managed JSON file. */
+/**
+ * Declarative rule loaded from user-managed JSON.
+ * All non-empty condition groups must match; within an {@code any} group, at least one value must
+ * match. Reference validation is performed by the repository before this domain rule is created.
+ */
 public final class ConfiguredValidationRule implements ValidationRule {
 
     private final String code;
@@ -25,6 +29,19 @@ public final class ConfiguredValidationRule implements ValidationRule {
     private final Set<String> allAssignedFunctions;
     private final Set<String> anyAssignedFunctions;
 
+    /**
+     * @param code stable diagnostic code
+     * @param severity issue severity
+     * @param message user-facing explanation
+     * @param suggestion corrective guidance
+     * @param processorIds optional processor filter
+     * @param powerModes optional power-mode filter
+     * @param allEnabledPeripherals peripherals that must all be enabled
+     * @param anyEnabledPeripherals peripherals of which at least one must be enabled
+     * @param allAssignedFunctions functions that must all be assigned
+     * @param anyAssignedFunctions functions of which at least one must be assigned
+     * @throws IllegalArgumentException if no condition is provided
+     */
     public ConfiguredValidationRule(
             String code,
             ValidationSeverity severity,
@@ -90,6 +107,7 @@ public final class ConfiguredValidationRule implements ValidationRule {
                 code, severity, message, suggestion, null, peripheralId));
     }
 
+    /** @return stable diagnostic code, also used to detect duplicate configured rules */
     public String code() {
         return code;
     }

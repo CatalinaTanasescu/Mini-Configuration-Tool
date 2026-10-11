@@ -6,6 +6,17 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Immutable aggregate containing the static capabilities of one processor.
+ * It resolves pins, peripheral ownership, and signal policy for services and validation rules,
+ * avoiding processor-specific conditionals in either presentation adapter.
+ *
+ * @param id stable machine-readable identifier
+ * @param displayName user-facing processor name
+ * @param pins physical pin capabilities
+ * @param peripherals explicit or compatibility-derived peripheral metadata
+ * @param independentSignals non-GPIO functions that intentionally have no peripheral owner
+ */
 public record ProcessorDefinition(
         String id,
         String displayName,
@@ -13,6 +24,13 @@ public record ProcessorDefinition(
         List<PeripheralDefinition> peripherals,
         Set<String> independentSignals) {
 
+    /**
+     * Creates a definition and derives legacy peripheral metadata from pin functions.
+     *
+     * @param id stable processor identifier
+     * @param displayName user-facing name
+     * @param pins processor pins
+     */
     public ProcessorDefinition(
             String id,
             String displayName,
@@ -21,6 +39,7 @@ public record ProcessorDefinition(
         this(id, displayName, pins, peripherals, Set.of());
     }
 
+    /** Validates aggregate-wide uniqueness and signal-ownership invariants. */
     public ProcessorDefinition {
         id = requireText(id, "Processor id");
         displayName = requireText(displayName, "Processor display name");
@@ -41,35 +60,42 @@ public record ProcessorDefinition(
         validateSignalCoverage(pins, peripherals, independentSignals);
     }
 
+    /** @return number of physical pins in the definition */
     public int pinCount() {
         return pins.size();
     }
 
+    /** @return matching pin, or an empty optional when the name is unknown */
     public Optional<PinDefinition> findPin(String pinName) {
         return pins.stream().filter(pin -> pin.name().equals(pinName)).findFirst();
     }
 
+    /** @return matching peripheral, or an empty optional when the identifier is unknown */
     public Optional<PeripheralDefinition> findPeripheral(String peripheralId) {
         return peripherals.stream().filter(peripheral -> peripheral.id().equals(peripheralId)).findFirst();
     }
 
+    /** @return the peripheral that owns the signal, if any */
     public Optional<PeripheralDefinition> findPeripheralForSignal(String signalName) {
         return peripherals.stream().filter(peripheral -> peripheral.ownsSignal(signalName)).findFirst();
     }
 
     /** Resolves signal ownership from this processor's validated catalog. */
+    /** @return contextual signal metadata, or empty for GPIO and independent signals */
     public Optional<SignalDescriptor> resolveSignal(String signalName) {
         return findPeripheralForSignal(signalName)
                 .map(peripheral -> new SignalDescriptor(
                         peripheral.id(), peripheral.category(), signalName));
     }
 
+    /** @return whether metadata marks the signal as exclusive */
     public boolean isSignalExclusive(String signalName) {
         return findPeripheralForSignal(signalName)
                 .map(peripheral -> peripheral.isSignalExclusive(signalName))
                 .orElse(false);
     }
 
+    /** @return whether the signal intentionally bypasses peripheral ownership */
     public boolean isIndependentSignal(String signalName) {
         return independentSignals.contains(signalName);
     }

@@ -1,5 +1,6 @@
 package com.example.configtool.domain.model;
 
+/** Logical peripheral families used by validation policies and presentation. */
 public enum PeripheralCategory {
     CAN,
     UART,

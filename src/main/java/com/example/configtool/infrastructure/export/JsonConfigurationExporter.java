@@ -15,12 +15,19 @@ import com.example.configtool.domain.model.ProcessorDefinition;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+/**
+ * Jackson-based JSON adapter for the {@link ConfigurationExporter} port.
+ * Output is written to a sibling temporary file before replacement, preventing partially generated
+ * content from being written directly to the destination. Atomic replacement is attempted first and
+ * falls back to an ordinary replacement when the filesystem does not support it.
+ */
 public final class JsonConfigurationExporter implements ConfigurationExporter {
 
     public static final String FORMAT_ID = "json";
     private static final String SCHEMA_VERSION = "1.0";
     private final ObjectMapper mapper;
 
+    /** Creates an exporter with an isolated, pretty-printing Jackson mapper. */
     public JsonConfigurationExporter() {
         this(new ObjectMapper());
     }

@@ -11,6 +11,7 @@ import com.example.configtool.domain.validation.ValidationIssue;
 import com.example.configtool.domain.validation.ValidationRule;
 import com.example.configtool.domain.validation.ValidationSeverity;
 
+/** Applies the explicitly modeled peripheral restrictions for low-power operation. */
 public final class PowerModeCompatibilityRule implements ValidationRule {
 
     public static final String CODE = "POWER_MODE";

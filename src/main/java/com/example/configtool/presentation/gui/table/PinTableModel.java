@@ -7,6 +7,10 @@ import javax.swing.table.AbstractTableModel;
 import com.example.configtool.application.service.ConfigurationService;
 import com.example.configtool.domain.model.PinDefinition;
 
+/**
+ * Swing table adapter exposing processor pins and current assignments.
+ * All edits are sent to {@link ConfigurationService}, keeping pin rules shared with the CLI.
+ */
 public final class PinTableModel extends AbstractTableModel {
 
     private static final long serialVersionUID = 1L;
@@ -18,6 +22,11 @@ public final class PinTableModel extends AbstractTableModel {
     private final Runnable changeListener;
     private final Consumer<RuntimeException> errorHandler;
 
+    /**
+     * @param service shared application facade
+     * @param changeListener invoked after successful edits
+     * @param errorHandler receives workflow failures for presentation
+     */
     public PinTableModel(
             ConfigurationService service,
             Runnable changeListener,
@@ -88,10 +97,12 @@ public final class PinTableModel extends AbstractTableModel {
         }
     }
 
+    /** @return processor pin represented by the model row */
     public PinDefinition pinAt(int modelRow) {
         return service.currentProcessor().pins().get(modelRow);
     }
 
+    /** Signals that every row may have changed after a session transition. */
     public void refresh() {
         fireTableDataChanged();
     }

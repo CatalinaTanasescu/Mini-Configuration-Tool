@@ -8,19 +8,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Builds peripheral definitions from pin functions and optional explicit metadata.
+ * Explicit JSON metadata is authoritative; {@link SignalResolver} is retained only as a
+ * compatibility path for legacy naming conventions.
+ */
 public final class PeripheralCatalog {
 
     private PeripheralCatalog() {
     }
 
+    /**
+     * @param pins processor pins containing legacy signal names
+     * @return inferred peripheral definitions
+     */
     public static List<PeripheralDefinition> fromPins(List<PinDefinition> pins) {
         return fromPins(pins, List.of());
     }
 
     /**
-     * Merges optional explicit metadata with convention-derived legacy metadata.
-     * Explicit signal ownership and exclusivity always win; the resolver is used
-     * only for functions not covered by the JSON metadata.
+     * Merges optional explicit metadata with convention-derived legacy metadata. Explicit signal
+     * ownership and exclusivity take precedence; the resolver is used only for uncovered functions.
+     *
+     * @param pins processor pins and their functions
+     * @param explicitPeripherals metadata-defined peripherals
+     * @return validated, deterministic peripheral catalog
+     * @throws IllegalArgumentException if signal ownership is ambiguous or incomplete
      */
     public static List<PeripheralDefinition> fromPins(
             List<PinDefinition> pins,

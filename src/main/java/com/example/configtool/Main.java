@@ -12,11 +12,20 @@ import com.example.configtool.presentation.gui.theme.UiTheme;
 
 import picocli.CommandLine;
 
+/**
+ * Process entry point that selects either the Swing or command-line presentation adapter.
+ * Both modes receive a service from {@link ApplicationBootstrap}, so mode selection does not fork
+ * business behavior.
+ */
 public final class Main {
 
     private Main() {
     }
 
+    /**
+     * @param args first argument selects {@code gui} or {@code cli}; remaining arguments are passed
+     *        to the CLI adapter
+     */
     public static void main(String[] args) {
         String mode = args.length == 0 ? "gui" : args[0].toLowerCase();
         String[] adapterArguments = args.length == 0 ? new String[0] : Arrays.copyOfRange(args, 1, args.length);
